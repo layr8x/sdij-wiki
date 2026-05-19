@@ -1,0 +1,103 @@
+{
+  "generated_at": "2026-05-12T14:00:14.002Z",
+  "period": {
+    "start": "2025-12-22",
+    "end": "2026-05-12",
+    "days": 142
+  },
+  "customer_channel": {
+    "total_chats": 1429,
+    "total_messages": 14250,
+    "dropped_chats": 472,
+    "drop_rate_pct": "33.0"
+  },
+  "response_time_weekday_in": {
+    "bucket": "weekday_in",
+    "n": "1869",
+    "avg_min": "31.2",
+    "p50_min": "2.8",
+    "p90_min": "24.0",
+    "le5": "1247",
+    "le30": "1710",
+    "over8h": "34"
+  },
+  "top_categories": [
+    {
+      "category": "영상재생/콘텐츠",
+      "chats": 440,
+      "pct": "30.8",
+      "negative_chats": 110,
+      "neg_pct": "25.0",
+      "dropped_chats": 147,
+      "drop_pct": "33.4",
+      "avg_msgs": "Infinity"
+    },
+    {
+      "category": "학원등록연동/회원이관",
+      "chats": 377,
+      "pct": "26.4",
+      "negative_chats": 79,
+      "neg_pct": "21.0",
+      "dropped_chats": 146,
+      "drop_pct": "38.7",
+      "avg_msgs": "Infinity"
+    },
+    {
+      "category": "학부모/계정통합",
+      "chats": 189,
+      "pct": "13.2",
+      "negative_chats": 52,
+      "neg_pct": "27.5",
+      "dropped_chats": 76,
+      "drop_pct": "40.2",
+      "avg_msgs": "5.597270440131577e+276"
+    },
+    {
+      "category": "강좌 신청/수강",
+      "chats": 134,
+      "pct": "9.4",
+      "negative_chats": 22,
+      "neg_pct": "16.4",
+      "dropped_chats": 26,
+      "drop_pct": "19.4",
+      "avg_msgs": "5.680705952235903e+153"
+    },
+    {
+      "category": "환불/결제",
+      "chats": 92,
+      "pct": "6.4",
+      "negative_chats": 18,
+      "neg_pct": "19.6",
+      "dropped_chats": 13,
+      "drop_pct": "14.1",
+      "avg_msgs": "1.1822621026595191e+104"
+    }
+  ],
+  "top_managers": [
+    {
+      "name": "차*희",
+      "msgs": "1884",
+      "chats": "800"
+    },
+    {
+      "name": "김명준",
+      "msgs": "453",
+      "chats": "176"
+    },
+    {
+      "name": "황*규",
+      "msgs": "446",
+      "chats": "161"
+    },
+    {
+      "name": "김*영",
+      "msgs": "419",
+      "chats": "241"
+    },
+    {
+      "name": "김*애",
+      "msgs": "377",
+      "chats": "211"
+    }
+  ]
+}

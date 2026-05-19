@@ -1010,9 +1010,61 @@ function ChatbotMessage({ msg, contextLabel, chatbot, onOpenGuide }) {
         </div>
       )
 
+    case MSG_TYPES.BOT_RELATED_GUIDES:
+      return (
+        <div className="mb-3 max-w-[92%]">
+          <RelatedGuidesCard guides={msg.guides} category={msg.category} />
+        </div>
+      )
+
+    case MSG_TYPES.BOT_CONTEXTUAL_HINT:
+      return (
+        <div className="mb-3 max-w-[92%]">
+          <ContextualHints hints={msg.hints} />
+        </div>
+      )
+
     default:
       return null
   }
+}
+
+// ─── Related Guides Card (v5+: Confluence 자동 인용) ─────────────────────
+function RelatedGuidesCard({ guides, category }) {
+  if (!guides || guides.length === 0) return null
+  return (
+    <div className="rounded-lg bg-card px-3.5 py-2.5" style={{ border: '1px solid var(--border)' }}>
+      <div className="text-[10.5px] font-semibold mb-2" style={{ color: CHATBOT_POINT }}>
+        📚 관련 컨플루언스 가이드 {category?.label ? `· ${category.emoji} ${category.label}` : ''}
+      </div>
+      <div className="space-y-1.5">
+        {guides.map((g, i) => (
+          <a key={i} href={g.url} target="_blank" rel="noopener noreferrer"
+             className="flex items-start gap-2 text-[12px] hover:bg-muted/30 rounded px-1.5 py-1 -mx-1.5 transition-colors">
+            <span className="text-[10px] font-mono text-muted-foreground shrink-0 mt-0.5">[{g.space}]</span>
+            <span className="flex-1 text-foreground leading-snug">{g.title}</span>
+            {g.updatedAt && <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">{g.updatedAt}</span>}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Contextual Hints (v5+: 시간/시즌/매니저 힌트) ────────────────────────
+function ContextualHints({ hints }) {
+  if (!hints || hints.length === 0) return null
+  return (
+    <div className="flex flex-col gap-1.5">
+      {hints.map((h, i) => (
+        <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11.5px]"
+             style={{ backgroundColor: 'var(--accent, #EDF1FB)', color: CHATBOT_POINT }}>
+          <span className="text-[14px]">{h.icon}</span>
+          <span className="font-medium">{h.text}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ─── PUBLIC API ─────────────────────────────────────────────────────────

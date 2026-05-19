@@ -24,7 +24,13 @@ import {
   NL2SQL_SAMPLES,
   decideResponseMode,
   OFFICIAL_QA_CATEGORIES,
+  getRelatedGuidesForQa,
 } from './intents'
+import {
+  getRecommendedManagers,
+  getContextualHints,
+  NEGATIVE_SIGNAL_BY_CATEGORY,
+} from '@/data/insights'
 
 // LocalStorage key — 첫 방문 여부
 const ONBOARDING_DONE_KEY = 'ams-wiki-chatbot-onboarded-v1'
@@ -57,6 +63,8 @@ const MSG_TYPES = {
   BOT_CONFIDENCE: 'bot-confidence',         // v4: Trust Calibration 밴드
   BOT_OFFICIAL_QA: 'bot-official-qa',       // v5: 실장님 시트 정형 응답 (자가해결 라벨 포함)
   BOT_MENU_PATH: 'bot-menu-path',           // v5: AMS 메뉴 경로 카드
+  BOT_RELATED_GUIDES: 'bot-related-guides', // v5+: FVSOL/AMS 컨플 가이드 자동 인용
+  BOT_CONTEXTUAL_HINT: 'bot-contextual-hint', // v5+: 시간/시즌/매니저 컨텍스트 힌트
   USER_TEXT: 'user-text',
   QUICK_REPLIES: 'quick-replies',
   FEEDBACK: 'feedback',
@@ -114,6 +122,15 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
     setTimeout(() => addMessage({
       type: MSG_TYPES.BOT_CAPABILITY,
     }), 1000)
+
+    // v5+: 시간/시즌 기반 컨텍스트 힌트 (단과 카톡 + 채널톡 분석 인사이트)
+    const hints = getContextualHints()
+    if (hints.length > 0) {
+      setTimeout(() => addMessage({
+        type: MSG_TYPES.BOT_CONTEXTUAL_HINT,
+        hints,
+      }), 1300)
+    }
 
     setTimeout(() => {
       addMessage({
@@ -225,6 +242,29 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
         confidence: detection.confidence,
         intentId: qa.id,
       })
+
+      // v5+: 관련 컨플 가이드 자동 인용 (FVSOL + AMS)
+      const relatedGuides = getRelatedGuidesForQa(qa)
+      if (relatedGuides.length > 0) {
+        addMessage({
+          type: MSG_TYPES.BOT_RELATED_GUIDES,
+          guides: relatedGuides,
+          category: cat,
+        })
+      }
+
+      // v5+: 부정 시그널 빈도가 높은 카테고리 (예: player 47%, okta 31%) — 자동 매니저 추천
+      const negThreshold = NEGATIVE_SIGNAL_BY_CATEGORY[qa.category] || 0
+      if (detection.isNegative || negThreshold >= 0.30) {
+        const recommended = getRecommendedManagers(qa.category)
+        if (recommended.length > 0) {
+          addMessage({
+            type: MSG_TYPES.BOT_CONTEXTUAL_HINT,
+            hints: [{ icon: '👥', text: `이 카테고리 담당: ${recommended.join(' / ')}` }],
+          })
+        }
+      }
+
       addMessage({ type: MSG_TYPES.FEEDBACK, intentId: qa.id })
 
       // 부정 시그널이면 에스컬레이션 한 번 더 권유

@@ -21,8 +21,45 @@ import {
   matchOfficialQa as matchOfficialQaRaw,
   getQaByCategory,
 } from '@/data/officialQa'
+import {
+  AMS_GUIDES,
+  FVSOL_GROUPS,
+  getConfluenceGroupsForCategory,
+  getAmsGuidesForCategory,
+  buildConfluenceUrl,
+} from '@/data/guides/confluence-sources'
 
-export { OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, getQaByCategory }
+export {
+  OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, getQaByCategory,
+  AMS_GUIDES, FVSOL_GROUPS,
+  getConfluenceGroupsForCategory, getAmsGuidesForCategory, buildConfluenceUrl,
+}
+
+/**
+ * v5+ 신규: 시트 카테고리 → 관련 Confluence 가이드 자동 인용 빌더
+ * 챗봇 답변 마지막에 "관련 가이드 N개 (FVSOL)" 형태로 자동 표시.
+ */
+export function getRelatedGuidesForQa(qa) {
+  if (!qa || !qa.category) return []
+  const fvsolGroups = getConfluenceGroupsForCategory(qa.category)
+  const amsGuides = getAmsGuidesForCategory(qa.category)
+  const related = []
+  for (const g of fvsolGroups) {
+    for (const p of g.pages.slice(0, 3)) {
+      related.push({
+        kind: 'fvsol', space: 'FVSOL', id: p.id, title: p.title,
+        group: g.label, url: buildConfluenceUrl('FVSOL', p.id),
+      })
+    }
+  }
+  for (const a of amsGuides) {
+    related.push({
+      kind: 'ams', space: 'AMS', id: a.id, title: a.title,
+      group: '운영 SOP', updatedAt: a.updatedAt, url: a.url,
+    })
+  }
+  return related.slice(0, 5)
+}
 
 /**
  * 의도 분석 규칙 — 키워드 매칭 + 컨피던스 스코어

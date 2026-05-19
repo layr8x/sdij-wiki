@@ -19,7 +19,6 @@ import {
   CONFIDENCE_THRESHOLD,
   getQuickRepliesForContext,
   generateRagResponse,
-  getConfidenceBand,
   getCitation,
   NL2SQL_SAMPLES,
   decideResponseMode,
@@ -189,7 +188,6 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
       const qa = detection.officialQa
       const mode = decideResponseMode(qa)
       const cat = OFFICIAL_QA_CATEGORIES.find(c => c.id === qa.category)
-      const band = getConfidenceBand(detection.confidence)
 
       // 답변 본문 (단계 + 주의사항)
       addMessage({
@@ -236,12 +234,7 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
         }
       }
 
-      addMessage({
-        type: MSG_TYPES.BOT_CONFIDENCE,
-        band,
-        confidence: detection.confidence,
-        intentId: qa.id,
-      })
+      // (Confidence 밴드 제거 — 사용자 요청: 가이드에 의심만 들게 만듦)
 
       // v5+: 관련 컨플 가이드 자동 인용 (FVSOL + AMS)
       const relatedGuides = getRelatedGuidesForQa(qa)
@@ -281,8 +274,7 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
 
     const { rule, isNegative } = detection
 
-    // v4: 신뢰도 밴드 + 인용 메타 사전 준비
-    const band = getConfidenceBand(rule.confidence)
+    // v5+: 신뢰도 밴드 제거 (사용자 요청 — 가이드 의심 유발). 인용 메타만 유지.
     const citation = getCitation(rule.docSlug)
     const citationNum = citation?.n || 1
 
@@ -299,12 +291,6 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
         title: rule.title,
         docSlug: rule.docSlug,
         confidence: rule.confidence,
-      })
-      addMessage({
-        type: MSG_TYPES.BOT_CONFIDENCE,
-        band,
-        confidence: rule.confidence,
-        intentId: rule.intent,
       })
       addMessage({ type: MSG_TYPES.FEEDBACK, intentId: rule.intent })
     }
@@ -325,12 +311,6 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
           citations: [citation],
         })
       }
-      addMessage({
-        type: MSG_TYPES.BOT_CONFIDENCE,
-        band,
-        confidence: rule.confidence,
-        intentId: rule.intent,
-      })
       addMessage({ type: MSG_TYPES.FEEDBACK, intentId: rule.intent })
     }
     else if (stage === CHATBOT_STAGES.TICKET) {

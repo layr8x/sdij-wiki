@@ -246,18 +246,57 @@ export const OFFICIAL_QA = [
 // ─── 검색/매칭 유틸 ─────────────────────────────────────────────
 const TOKEN_NORMALIZE = (s) => s.toLowerCase().replace(/[\s·\-/]+/g, '')
 
+// 카테고리별 강한 키워드 (가중치 ×3)
+const CATEGORY_KEYWORDS = {
+  okta: ['okta', '옥타', 'qr', '인증앱', '리셋', 'reset'],
+  refund: ['환불', '취소', '환불대기', '가상계좌', '환불계좌'],
+  payment: ['결제', '청구', '수강료', '납부', '신한캠', '신한캠퍼스', '결제문자'],
+  enrollment: ['입반', '대기', '접수', '정원', '전형'],
+  attendance: ['출결', '출석', '결석', '보강', '보강코드', '퇴원생'],
+  member: ['회원', '병합', '통합회원', '로컬회원', '연동코드', '학부모', '동의', '회원병합', '회원 병합', '중복계정'],
+  course: ['강좌', '반관리', '폐강', '강사'],
+  message: ['문자', '메시지', '발송', '알림', '광고성', 'sms', 'mms'],
+}
+
+// 키워드를 카테고리로 매핑 (빠른 lookup)
+const KW_TO_CATEGORY = (() => {
+  const m = {}
+  for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
+    for (const k of kws) m[TOKEN_NORMALIZE(k)] = cat
+  }
+  return m
+})()
+
 /**
- * 시트의 25 Q&A 풀에서 가장 유사한 항목 찾기 (간단한 키워드 매칭)
- * @returns {OfficialQA | null}
+ * 시트의 25 Q&A 풀에서 가장 유사한 항목 찾기.
+ * v2 알고리즘: 카테고리 강한 키워드 → 카테고리 잠금 → 그 안에서 토큰 매칭
  */
 export function matchOfficialQa(query) {
   if (!query || query.length < 2) return null
   const nq = TOKEN_NORMALIZE(query)
+
+  // 1단계: 카테고리 강한 키워드 매칭 — 매칭되면 그 카테고리로 잠금
+  const categoryHits = {}
+  for (const [kwN, cat] of Object.entries(KW_TO_CATEGORY)) {
+    if (nq.includes(kwN)) {
+      categoryHits[cat] = (categoryHits[cat] || 0) + kwN.length
+    }
+  }
+  // 가장 점수 높은 카테고리 (lockedCategory)
+  let lockedCategory = null
+  let lockedScore = 0
+  for (const [cat, s] of Object.entries(categoryHits)) {
+    if (s > lockedScore) { lockedScore = s; lockedCategory = cat }
+  }
+
+  // 2단계: locked category 안에서 best Q 매칭. 없으면 전체 검색.
+  const candidates = lockedCategory
+    ? OFFICIAL_QA.filter(q => q.category === lockedCategory)
+    : OFFICIAL_QA
+
   let best = null
   let bestScore = 0
-  for (const item of OFFICIAL_QA) {
-    const nQ = TOKEN_NORMALIZE(item.q)
-    // 키 토큰 추출 - 카테고리 / 질문에서 명사 단위 매칭
+  for (const item of candidates) {
     const tokens = [
       ...item.q.split(/\s+/),
       ...(item.tip || '').split(/\s+/),
@@ -266,12 +305,11 @@ export function matchOfficialQa(query) {
     for (const t of tokens) {
       if (nq.includes(t)) score += t.length
     }
-    // 직접 포함 보너스
-    if (nq.includes(nQ.slice(0, 6))) score += 10
+    // 카테고리 락 보너스
+    if (lockedCategory && item.category === lockedCategory) score += lockedScore * 3
     if (score > bestScore) { bestScore = score; best = item }
   }
-  // 최소 점수 임계값
-  return bestScore >= 4 ? { item: best, score: bestScore } : null
+  return bestScore >= 6 ? { item: best, score: bestScore } : null
 }
 
 export function getQaByCategory(categoryId) {

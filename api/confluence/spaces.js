@@ -2,7 +2,7 @@
 // Confluence 스페이스 조회
 
 import { createClient } from '@supabase/supabase-js'
-import ConfluenceClient from '../lib/confluence-client.js'
+import ConfluenceClient from '../_lib/confluence-client.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,

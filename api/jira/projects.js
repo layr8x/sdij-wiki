@@ -2,7 +2,7 @@
 // Jira 프로젝트 조회
 
 import { createClient } from '@supabase/supabase-js'
-import JiraClient from '../lib/jira-client.js'
+import JiraClient from '../_lib/jira-client.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,

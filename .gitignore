@@ -30,3 +30,6 @@ dist-ssr
 _*.mjs
 kakao-partner-raw.log
 kakao-stream.log
+.vercelignore 2
+files/
+.claude/

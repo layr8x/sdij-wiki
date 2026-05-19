@@ -261,12 +261,32 @@ export async function fetchDashboardStats() {
       searchCount: searchRes.count || 0,
     }
   }
-  const guides = Object.values(GUIDES)
+  // Supabase 미연결 fallback — 실제 운영 데이터(SSOT) 기반.
+  // 출처: 실장님 시트 25 Q&A (officialQa.js) + FVSOL 컨플 130 페이지 + AMS 1 페이지 (confluence-sources.js)
+  // 누적 조회수/만족도는 Supabase 연결 후 실측. 현재는 정직하게 0/null.
+  // eslint-disable-next-line no-unused-vars
+  const _legacyMockGuides = Object.values(GUIDES)
+  // 동적 import 회피 — Vite tree-shaking 위해 모듈 상단 import 사용 권장이나
+  // 순환 의존성 회피 위해 require-style 동적 import.
+  let totalGuides = 156
+  let recentDate = '2026-05-20'
+  try {
+    const { OFFICIAL_QA } = await import('@/data/officialQa')
+    const { FVSOL_GROUPS, AMS_GUIDES } = await import('@/data/guides/confluence-sources')
+    const officialCount = OFFICIAL_QA?.length || 0
+    const fvsolCount = (FVSOL_GROUPS || []).reduce((s, g) => s + g.pages.length, 0)
+    const amsCount = (AMS_GUIDES || []).length
+    totalGuides = officialCount + fvsolCount + amsCount
+    recentDate = (AMS_GUIDES?.[0]?.updatedAt) || recentDate
+  } catch (e) {
+    // fallback 정적값
+  }
   return {
-    totalGuides: guides.length,
-    totalViews:  guides.reduce((s, g) => s + (g.views || 0), 0),
-    helpfulRate: 89,
-    searchCount: 0,
+    totalGuides,
+    totalViews: null,     // 측정 전 (Supabase 미연결)
+    helpfulRate: null,
+    searchCount: null,
+    recentDate,
   }
 }
 

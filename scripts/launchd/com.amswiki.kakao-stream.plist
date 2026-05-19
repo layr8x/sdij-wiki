@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  카카오 파트너센터 실시간 수집 데몬을 macOS launchd 로 상시 실행.
+  설치:
+    1) PROJECT_DIR / NODE_BIN 경로를 본인 환경에 맞게 수정
+    2) cp scripts/launchd/com.amswiki.kakao-stream.plist ~/Library/LaunchAgents/
+    3) launchctl load ~/Library/LaunchAgents/com.amswiki.kakao-stream.plist
+    4) tail -f ~/Library/Logs/ams-wiki/kakao-stream.log
+  중지:
+    launchctl unload ~/Library/LaunchAgents/com.amswiki.kakao-stream.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.amswiki.kakao-stream</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>--env-file=.env.local</string>
+    <string>scripts/kakao-partner-stream.mjs</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/layr8x/path/to/ams-wiki</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+    <key>Crashed</key>
+    <true/>
+  </dict>
+
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/layr8x/Library/Logs/ams-wiki/kakao-stream.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/layr8x/Library/Logs/ams-wiki/kakao-stream.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>NODE_ENV</key>
+    <string>production</string>
+  </dict>
+</dict>
+</plist>

@@ -26,3 +26,7 @@ dist-ssr
 .vercel
 .env.local
 .env.local
+.env*.local
+_*.mjs
+kakao-partner-raw.log
+kakao-stream.log

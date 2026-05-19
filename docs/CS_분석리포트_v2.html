@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>시대인재 마이클래스 — CS 교차 분석 리포트 v2</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#fafaf9;--card:#fff;--ink:#1a1a1a;--mute:#666;--line:#e5e5e5;--accent:#c41f3d;--warn:#d97706;--ok:#059669;--mono:'SF Mono',Monaco,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;font-size:14px}
+  .wrap{max-width:1100px;margin:0 auto;padding:48px 32px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:40px}
+  h1{font-size:28px;margin:0 0 8px;font-weight:700}
+  .sub{color:var(--mute);font-size:13px}
+  h2{font-size:20px;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--line);font-weight:700}
+  h3{font-size:16px;margin:24px 0 12px;font-weight:600;color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin:16px 0}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left}
+  th{background:#f5f5f4;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+  .pill-warn{background:#fef3c7;color:#92400e}
+  .pill-ok{background:#d1fae5;color:#065f46}
+  .pill-bad{background:#fee2e2;color:#991b1b}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .kpi-num{font-size:32px;font-weight:700;font-family:var(--mono);color:var(--accent);line-height:1.2}
+  .kpi-label{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+  .chart-wrap{position:relative;height:300px;margin:16px 0}
+  .chart-wrap-tall{position:relative;height:380px;margin:16px 0}
+  blockquote{border-left:3px solid var(--accent);padding-left:16px;margin:16px 0;color:var(--mute);font-style:italic}
+  ul,ol{padding-left:20px}
+  li{margin:4px 0}
+  code{font-family:var(--mono);background:#f5f5f4;padding:2px 6px;border-radius:4px;font-size:12px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin:8px 0}
+  .legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>시대인재 마이클래스 — CS 교차 분석 리포트 v2</h1>
+  <div class="sub">
+    분석 기간 2025-12-22 ~ 2026-05-12 (140일) · 마이클래스 카카오톡 상담 채널 + 단과 상담실장 오픈채팅 · 분석일 2026-05-12
+  </div>
+</header>
+
+<section class="grid">
+  <div class="kpi"><div class="kpi-num">14,250</div><div class="kpi-label">총 메시지</div></div>
+  <div class="kpi"><div class="kpi-num">1,423</div><div class="kpi-label">채팅방</div></div>
+  <div class="kpi"><div class="kpi-num">2.8분</div><div class="kpi-label">운영시간 응답 P50</div></div>
+  <div class="kpi"><div class="kpi-num">33%</div><div class="kpi-label">드롭률 (user 종료)</div></div>
+  <div class="kpi"><div class="kpi-num">7+1</div><div class="kpi-label">매니저 (외부+사용자 본인)</div></div>
+  <div class="kpi"><div class="kpi-num">832</div><div class="kpi-label">12-1월 신규 채팅 (58%)</div></div>
+</section>
+
+<h2>1 · 왜 이 분석인가</h2>
+<div class="card">
+<p>AMS 나무 위키 로드맵 <b>1단계 — "CS 데이터 수집 및 지식 구조 설계"</b> 의 전제 조건은 어떤 문의가 얼마나, 왜 반복되는지를 정량적으로 파악하는 것이다. 이것이 위키 콘텐츠의 우선순위와 구조를 결정한다.</p>
+<p><b>마이클래스 카카오톡 상담 채널</b>(고객 대면) 과 <b>단과 상담실장 오픈채팅</b>(내부 운영) 은 동일한 시스템 이슈의 양면이다. 학부모가 "학원등록 연동이 안 된다"고 상담하면, 같은 시간 상담실장이 내부 채팅에서 "이관 부탁드려요"를 올린다. 두 채널을 교차 분석하면 <b>고객이 묻는 것 = 운영자가 답해야 하는 것 = 위키에 들어갈 핵심 항목</b>이라는 등식이 성립한다.</p>
+</div>
+
+<h2>2 · 고객 상담 카테고리 — Top 5가 전체의 86%</h2>
+<div class="chart-wrap-tall"><canvas id="catChart"></canvas></div>
+
+<table>
+<thead><tr><th>#</th><th>카테고리</th><th class="num">채팅</th><th class="num">비중</th><th class="num">부정감정</th><th class="num">응답 P50</th><th>위키 매핑</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><b>영상재생/콘텐츠</b></td><td class="num">440</td><td class="num">30.9%</td><td class="num"><span class="pill pill-warn">37.0%</span></td><td class="num">20.4분</td><td>영상/VOD 관리</td></tr>
+<tr><td>2</td><td><b>학원등록연동/회원이관</b></td><td class="num">377</td><td class="num">26.5%</td><td class="num">29.7%</td><td class="num"><span class="pill pill-ok">7.7분</span></td><td>회원관리 &gt; 연동</td></tr>
+<tr><td>3</td><td><b>학부모/계정통합</b></td><td class="num">189</td><td class="num">13.3%</td><td class="num"><span class="pill pill-bad">41.8%</span></td><td class="num">12.9분</td><td>회원관리 &gt; 통합회원</td></tr>
+<tr><td>4</td><td>강좌 신청/수강</td><td class="num">134</td><td class="num">9.4%</td><td class="num">17.9%</td><td class="num">12.8분</td><td>강좌관리 &gt; 등록</td></tr>
+<tr><td>5</td><td><b>환불/결제</b></td><td class="num">92</td><td class="num">6.5%</td><td class="num">21.7%</td><td class="num">21.3분</td><td>결제·환불 SOP</td></tr>
+<tr><td>6</td><td>기타</td><td class="num">78</td><td class="num">5.5%</td><td class="num">11.5%</td><td class="num">30.8분</td><td>—</td></tr>
+<tr><td>7</td><td>QR/출석</td><td class="num">60</td><td class="num">4.2%</td><td class="num">18.3%</td><td class="num">18.2분</td><td>출결관리</td></tr>
+<tr><td>8</td><td><b>로그인/계정</b></td><td class="num">32</td><td class="num">2.2%</td><td class="num"><span class="pill pill-bad">46.9%</span></td><td class="num"><span class="pill pill-ok">6.3분</span></td><td>인증·계정</td></tr>
+<tr><td>9</td><td>강사/강좌 정보</td><td class="num">9</td><td class="num">0.6%</td><td class="num">22.2%</td><td class="num">595분</td><td>강좌 정보</td></tr>
+<tr><td>10</td><td>앱 설치/오류</td><td class="num">9</td><td class="num">0.6%</td><td class="num">33.3%</td><td class="num">631분</td><td>앱 트러블슈팅</td></tr>
+</tbody>
+</table>
+
+<blockquote>
+<b>핵심 발견</b> — 영상재생이 인입 1위지만 부정감정 37%로 시스템 인프라 이슈(프로덕트 영역). 로그인/계정은 32건뿐이지만 부정감정 <b>46.9%</b>로 단일 카테고리 최악 — 인증 UX 자체 문제. 환불/결제는 P50 21분/평균 422분으로 편차가 커 복잡한 케이스에서 처리 지연.
+</blockquote>
+
+<h2>3 · 단과 상담실장 내부 채팅 (7일 표본 141건)</h2>
+<div class="chart-wrap"><canvas id="staffChart"></canvas></div>
+
+<table>
+<thead><tr><th>#</th><th>카테고리</th><th class="num">메시지</th><th class="num">비중</th><th class="num">부정감정</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>기타 / 비분류</td><td class="num">65</td><td class="num">46.1%</td><td class="num">10.8%</td></tr>
+<tr><td>2</td><td><b>계정이관/통합</b></td><td class="num">33</td><td class="num">23.4%</td><td class="num">12.1%</td></tr>
+<tr><td>3</td><td><b>출결 시스템</b></td><td class="num">18</td><td class="num">12.8%</td><td class="num"><span class="pill pill-warn">38.9%</span></td></tr>
+<tr><td>4</td><td>결제/환불 오류</td><td class="num">12</td><td class="num">8.5%</td><td class="num">33.3%</td></tr>
+<tr><td>5</td><td>수강료/청구 오류</td><td class="num">9</td><td class="num">6.4%</td><td class="num">11.1%</td></tr>
+<tr><td>6</td><td>영상/콘텐츠 시스템</td><td class="num">4</td><td class="num">2.8%</td><td class="num">0%</td></tr>
+</tbody>
+</table>
+
+<h3>활발한 사용자 (상위 7명)</h3>
+<table>
+<thead><tr><th>지점·부서</th><th class="num">메시지 수</th></tr></thead>
+<tbody>
+<tr><td>플랫폼서비스실 황인규 QA</td><td class="num">16</td></tr>
+<tr><td>플랫폼서비스실 조호영</td><td class="num">8</td></tr>
+<tr><td>목동 윤연진</td><td class="num">8</td></tr>
+<tr><td>대치고3 차희라</td><td class="num">7</td></tr>
+<tr><td>플랫폼서비스실 김수민</td><td class="num">6</td></tr>
+<tr><td>대치 고3 이지연</td><td class="num">6</td></tr>
+<tr><td>플랫폼서비스실 박혜선</td><td class="num">5</td></tr>
+</tbody>
+</table>
+
+<blockquote>
+52명의 상담실장·플랫폼서비스실 직원이 동일 오픈채팅에서 협의. 단과(현강) 지점 상담실장이 학사·계정 이슈를 백오피스에 요청, 플서실이 처리 응답하는 구조.
+</blockquote>
+
+<h2>4 · 교차 분석 — 두 채널의 일치점·괴리점</h2>
+<div class="chart-wrap"><canvas id="crossChart"></canvas></div>
+
+<table>
+<thead><tr><th>영역</th><th class="num">고객 (myclass)</th><th class="num">직원 (단과)</th><th>해석</th></tr></thead>
+<tbody>
+<tr><td><b>계정이관/통합</b></td><td class="num">26.5% + 13.3% = 39.8%</td><td class="num"><b>23.4%</b></td><td>양쪽 모두 상위 — 위키 + 프로덕트 동시 개선 영역</td></tr>
+<tr><td>출결/QR</td><td class="num">4.2%</td><td class="num">12.8%</td><td>직원이 더 많이 의제화 — 운영자측 시스템 미숙</td></tr>
+<tr><td>결제/환불</td><td class="num">6.5%</td><td class="num">8.5%</td><td>양쪽 비슷 — SOP 정비 영역</td></tr>
+<tr><td><b>영상/콘텐츠</b></td><td class="num">30.9%</td><td class="num">2.8%</td><td>직원은 해결 불가 — 시스템 결함 (프로덕트)</td></tr>
+</tbody>
+</table>
+
+<h2>5 · 운영 SLA · 시즌</h2>
+<h3>응답시간 (운영시간 평일 10-20시 기준)</h3>
+<div class="chart-wrap"><canvas id="slaChart"></canvas></div>
+
+<table>
+<thead><tr><th>Bucket</th><th class="num">응답 pair</th><th class="num">평균</th><th class="num">P50</th><th class="num">P90</th><th class="num">30분 내</th></tr></thead>
+<tbody>
+<tr><td><b>weekday_in</b> (평일 10-20시)</td><td class="num">1,869</td><td class="num">31.2분</td><td class="num"><span class="pill pill-ok">2.8분</span></td><td class="num">24.0분</td><td class="num"><span class="pill pill-ok">91.5%</span></td></tr>
+<tr><td>weekend_in (주말 10-20시)</td><td class="num">668</td><td class="num">258분</td><td class="num">4.0분</td><td class="num">1090분</td><td class="num">74.3%</td></tr>
+<tr><td>outside (운영 외)</td><td class="num">616</td><td class="num">399분</td><td class="num">111분</td><td class="num">813분</td><td class="num">28.2%</td></tr>
+</tbody>
+</table>
+
+<h3>월별 신규 채팅 (시즌성)</h3>
+<div class="chart-wrap"><canvas id="seasonChart"></canvas></div>
+<blockquote>12-1월이 진짜 인입 peak (전체 신규 채팅의 58%). 카카오 retention으로 12/1-21 데이터 잘림 — 실제 12월은 더 큼.</blockquote>
+
+<h3>매니저 부하 (7명 핵심팀)</h3>
+<div class="chart-wrap"><canvas id="mgrChart"></canvas></div>
+
+<h2>6 · AMS 위키 콘텐츠 우선순위</h2>
+<table>
+<thead><tr><th>순위</th><th>위키 섹션</th><th>근거 데이터</th><th>콘텐츠 소스</th></tr></thead>
+<tbody>
+<tr><td><span class="pill pill-bad">P0</span></td><td><b>회원관리 &gt; 통합회원/계정이관</b></td><td>고객 566건(40%) + 직원 33건(23.4%)</td><td>이관 요청·표준 응답</td></tr>
+<tr><td><span class="pill pill-bad">P0</span></td><td><b>영상/VOD &gt; 복습영상·재생 트러블슈팅</b></td><td>고객 440건(31%) + 부정 37%</td><td>시스템 폴백·우회 가이드</td></tr>
+<tr><td><span class="pill pill-warn">P1</span></td><td>출결관리 &gt; QR 출석·출석부</td><td>고객 60건 + 직원 18건(12.8%, 부정 38.9%)</td><td>QR 폴백·인쇄 가이드</td></tr>
+<tr><td><span class="pill pill-warn">P1</span></td><td>결제/환불 SOP</td><td>고객 92건, 평균 응답 422분</td><td>의사결정 트리</td></tr>
+<tr><td><span class="pill pill-warn">P1</span></td><td>인증·로그인 가이드</td><td>고객 32건, 부정 46.9%(최고)</td><td>비밀번호 재설정·이메일 인증 응답</td></tr>
+<tr><td>P2</td><td>강좌 신청/수강</td><td>134건, 부정 17.9%</td><td>정형 안내</td></tr>
+<tr><td>P2</td><td>학부모앱 / 자녀 추가</td><td>189건(계정통합 포함)</td><td>별도 채널 안내 + 연결</td></tr>
+</tbody>
+</table>
+
+<h2>7 · 위키 vs 프로덕트 구분</h2>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <h3>위키로 해결</h3>
+    <ul>
+      <li><b>계정 이관·통합</b> — 권한 위임 + SOP 위키화</li>
+      <li><b>환불·결제 SOP</b> — 의사결정 트리로 422분 → 60분</li>
+      <li>출석부 인쇄 가이드 — 기능 사용법 페이지</li>
+      <li>수강신청 안내 — 부정 17.9%, 정형 응답</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>프로덕트로 고침</h3>
+    <ul>
+      <li><b>영상 재생 오류</b> — 스트리밍 인프라 (440건 + 부정 37%)</li>
+      <li><b>로그인·인증 UX</b> — 부정 46.9% 최고</li>
+      <li><b>학부모앱 자녀 추가</b> — 부정 41.8%</li>
+      <li>카톡 채널 진입 카드 세분화 (89건 "마이클래스 앱 관련 문의")</li>
+      <li><b>드롭 472건 회수</b> — 미응답 알림 자동화</li>
+    </ul>
+  </div>
+</div>
+
+<h2>8 · 30일 실행 계획</h2>
+<table>
+<thead><tr><th>주차</th><th>작업</th><th>산출물</th></tr></thead>
+<tbody>
+<tr><td><b>W1 (5/12-5/18)</b></td><td>CS 카테고리 → AMS 메뉴 1:1 매핑 + P0 시나리오 10건씩 추출</td><td>매핑 표 + 시나리오 문서</td></tr>
+<tr><td><b>W2 (5/19-5/25)</b></td><td>P0 위키: 통합회원/계정이관 SOP, 영상/VOD 트러블슈팅</td><td>Confluence 페이지 ×2</td></tr>
+<tr><td><b>W3 (5/26-6/1)</b></td><td>P1 위키 3개 + FAQ 초안 (P0/P1 상위 5문항씩)</td><td>위키 ×3 + FAQ</td></tr>
+<tr><td><b>W4 (6/2-6/8)</b></td><td>상담실장 리뷰 + 실시간 파이프라인 docs 정비 (PR #37)</td><td>리뷰 반영 + launchd 배포</td></tr>
+</tbody>
+</table>
+
+<h2>9 · KPI</h2>
+<table>
+<thead><tr><th>지표</th><th>현재</th><th>목표 (6개월)</th><th>측정</th></tr></thead>
+<tbody>
+<tr><td>반복 CS 문의 비율</td><td>추정 60%+</td><td>40% 이하</td><td>동일 카테고리 재문의율</td></tr>
+<tr><td>운영시간 응답 P90</td><td>24분</td><td>15분</td><td>SQL 직접</td></tr>
+<tr><td>환불·결제 응답시간</td><td>P50 21분 / 평균 422분</td><td>P50 15분 / 평균 60분</td><td>SOP 위키화 후</td></tr>
+<tr><td>드롭률</td><td>33%</td><td>20% 이하</td><td>last_sender</td></tr>
+<tr><td>위키 자체 해결율</td><td>0%</td><td>30% 이상</td><td>위키 조회 후 미상담</td></tr>
+</tbody>
+</table>
+
+<h2>10 · 정정 트레일</h2>
+<div class="card">
+<p>이 분석은 두 번 잘못 보고했음 (투명한 기록):</p>
+<ol>
+<li><b>1차</b>: "100채팅 / 944건" — search API size=100 cap을 한계로 오인. has_next 무시.</li>
+<li><b>2차</b>: "100채팅 / 1,080건" — chatlogs 페이지네이션은 fix, 채팅방 페이지네이션은 미해결.</li>
+<li><b>3차</b>: "P90 14.6시간 위기 / 차*희 87% SPOF / 5월 peak" — 24h 평균 SLA + 100건 표본의 매니저 분포. 도메인 무시.</li>
+<li><b>4차 (현재)</b>: "1,429채팅 / 14,250건 / 운영시간 P50 2.8분 / 12-1월 peak / 7+1 매니저" — <code>?size=100&since={last_log_id}</code> 페이지네이션 발견 + 운영시간 SLA + AMS 위키 컨텍스트 반영.</li>
+</ol>
+</div>
+
+<h2>11 · 리스크 / 전제</h2>
+<ul>
+<li>단과 표본 부족 — 7일치 141건. AMS 백오피스 사용 분포 대표성 약함. 30일+ 수집 후 재분석.</li>
+<li>카카오 retention — 12/22 이전 잘림. 진짜 11월·12월초 누락.</li>
+<li>키워드 룰 기반 분류 — 복합 문의 정확도 한계. P0 작성 시 수동 검증.</li>
+<li>last_log_id mismatch 159건 — stream 데몬 동작 중이라 새 메시지 추가. 정상.</li>
+<li>시즌성 변동 — 12-1월 peak가 매년 반복되는지 내년 비교 필요.</li>
+</ul>
+
+<footer>
+보고자 김명준 (PO 겸 UX/UI Design Lead) · 분석 도구 kakao-partner-stream + analyze-cs.mjs (자체 개발) · PR <a href="https://github.com/layr8x/ams-wiki/pull/37">#37</a>
+</footer>
+
+</div>
+
+<script>
+const palette = ['#c41f3d','#d97706','#059669','#0284c7','#7c3aed','#db2777','#65a30d','#0891b2','#9333ea','#dc2626','#475569','#737373'];
+
+// 1. 카테고리 막대 차트
+new Chart(document.getElementById('catChart'), {
+  type:'bar',
+  data:{
+    labels:['영상재생','학원등록연동','학부모/계정통합','강좌 신청','환불/결제','기타','QR/출석','로그인','강사 정보','앱 설치','교재/배송'],
+    datasets:[
+      {label:'채팅 수', data:[440,377,189,134,92,78,60,32,9,9,3], backgroundColor:'#c41f3d', yAxisID:'y'},
+      {label:'부정감정 %', data:[37.0,29.7,41.8,17.9,21.7,11.5,18.3,46.9,22.2,33.3,33.3], backgroundColor:'#d97706', yAxisID:'y1', type:'line', borderColor:'#d97706'}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    scales:{
+      y:{position:'left', title:{display:true, text:'채팅 수'}},
+      y1:{position:'right', title:{display:true, text:'부정감정 %'}, grid:{display:false}, max:50}
+    }
+  }
+});
+
+// 2. 직원 카테고리
+new Chart(document.getElementById('staffChart'),{
+  type:'doughnut',
+  data:{
+    labels:['기타','계정이관/통합','출결 시스템','결제/환불 오류','수강료/청구','영상/콘텐츠'],
+    datasets:[{data:[65,33,18,12,9,4], backgroundColor:palette}]
+  },
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}}}
+});
+
+// 3. 교차 비교
+new Chart(document.getElementById('crossChart'),{
+  type:'bar',
+  data:{
+    labels:['계정이관/통합','출결/QR','결제/환불','영상/콘텐츠'],
+    datasets:[
+      {label:'고객 (myclass)', data:[39.8,4.2,6.5,30.9], backgroundColor:'#c41f3d'},
+      {label:'직원 (단과)', data:[23.4,12.8,8.5,2.8], backgroundColor:'#0284c7'}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    scales:{y:{title:{display:true, text:'채팅의 % (해당 카테고리 언급)'}}}
+  }
+});
+
+// 4. SLA bucket
+new Chart(document.getElementById('slaChart'),{
+  type:'bar',
+  data:{
+    labels:['weekday_in','weekend_in','outside'],
+    datasets:[
+      {label:'P50 (분)', data:[2.8,4.0,111.2], backgroundColor:'#059669'},
+      {label:'P90 (분)', data:[24.0,1090,813], backgroundColor:'#d97706'}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    scales:{y:{type:'logarithmic', title:{display:true, text:'분 (log scale)'}}}
+  }
+});
+
+// 5. 시즌성
+new Chart(document.getElementById('seasonChart'),{
+  type:'line',
+  data:{
+    labels:['25-12 (10일치)','26-01','26-02','26-03','26-04','26-05 (12일치)'],
+    datasets:[
+      {label:'신규 채팅', data:[373,459,221,217,85,68], borderColor:'#c41f3d', backgroundColor:'rgba(196,31,61,.1)', fill:true, tension:.3}
+    ]
+  },
+  options:{responsive:true, maintainAspectRatio:false}
+});
+
+// 6. 매니저 부하
+new Chart(document.getElementById('mgrChart'),{
+  type:'bar',
+  data:{
+    labels:['차*희','김명준 (본인)','황*규','김*영','김*애','박*진','신*현','기타 6명'],
+    datasets:[
+      {label:'담당 채팅', data:[800,176,161,241,211,54,52,33], backgroundColor:'#c41f3d'},
+      {label:'메시지 수', data:[1884,453,446,419,377,168,96,76], backgroundColor:'#0284c7'}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    indexAxis:'y'
+  }
+});
+</script>
+</body>
+</html>

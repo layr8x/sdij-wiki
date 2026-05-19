@@ -1,7 +1,10 @@
 // src/data/guides/confluence-sources.js
 // Hiconsy Confluence 가이드 SSOT — 챗봇 응답 인용 + 직접 링크
 // 출처: AMS/2076704794, FVSOL/1378910256 (atlassian-realtime via Claude in Chrome SSO)
-// 추출일: 2026-05-19
+// 추출일: 2026-05-19 (메타 인덱스), 2026-05-20 (6개 핵심 페이지 본문 풀 추출)
+
+import { FVSOL_BODIES, getFvsolBody, getFvsolBodiesByCategory } from './fvsol-bodies'
+export { FVSOL_BODIES, getFvsolBody, getFvsolBodiesByCategory }
 
 export const CONFLUENCE_BASE = 'https://hiconsy.atlassian.net/wiki/spaces'
 

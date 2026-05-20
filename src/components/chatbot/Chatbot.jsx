@@ -285,6 +285,7 @@ function QuickReplies({ replies, onClick }) {
 }
 
 // ─── Guide Card ─────────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 function GuideCard({ category, title, docSlug, confidence, onOpen }) {
   return (
     <button
@@ -299,8 +300,8 @@ function GuideCard({ category, title, docSlug, confidence, onOpen }) {
         📘 {category}
       </div>
       <div className="text-[13px] font-semibold mt-1 leading-snug text-foreground">{title}</div>
-      <div className="text-[11.5px] text-muted-foreground mt-1">
-        가이드 보기 → · 신뢰도 {Math.round(confidence * 100)}%
+      <div className="text-[11.5px] mt-1 underline" style={{ color: CHATBOT_POINT }}>
+        가이드 열기 →
       </div>
     </button>
   )
@@ -808,7 +809,7 @@ function ChatbotInput({ onSend, placeholder }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative border-t flex items-center gap-2 px-3.5 py-3 bg-background"
+      className="relative border-t border-[#E8E8E8] px-3.5 py-3 bg-background"
     >
       {showSuggestions && text.length >= 2 && (
         <AutocompleteSuggestions
@@ -816,25 +817,27 @@ function ChatbotInput({ onSend, placeholder }) {
           onSelect={handleSuggestionSelect}
         />
       )}
-      <input
-        ref={inputRef}
-        value={text}
-        onChange={e => { setText(e.target.value); setShowSuggestions(true) }}
-        onFocus={() => setShowSuggestions(true)}
-        placeholder={placeholder || '자유롭게 질문하세요 (⌘ + / 로 토글)'}
-        className="flex-1 bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground"
-        autoComplete="off"
-        aria-label="챗봇 질문 입력"
-      />
-      <button
-        type="submit"
-        disabled={!text.trim()}
-        aria-label="전송"
-        className="h-8 w-8 rounded-full flex items-center justify-center text-white transition-all disabled:opacity-50"
-        style={{ backgroundColor: CHATBOT_POINT }}
-      >
-        <ArrowUp size={14} weight="bold" />
-      </button>
+      <div className="flex items-center gap-2 h-11 rounded-full border border-[#E8E8E8] bg-[#F7F7F7] pl-4 pr-1.5 focus-within:border-[#0043CE] focus-within:bg-white transition-colors">
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={e => { setText(e.target.value); setShowSuggestions(true) }}
+          onFocus={() => setShowSuggestions(true)}
+          placeholder={placeholder || '무엇이든 물어보세요'}
+          className="flex-1 bg-transparent border-0 outline-none text-[13px] text-[#1A1A1A] placeholder:text-[#999999]"
+          autoComplete="off"
+          aria-label="챗봇 질문 입력"
+        />
+        <button
+          type="submit"
+          disabled={!text.trim()}
+          aria-label="전송"
+          className="h-8 w-8 rounded-full flex items-center justify-center text-white transition-all disabled:opacity-40 hover:opacity-90"
+          style={{ backgroundColor: CHATBOT_POINT }}
+        >
+          <ArrowUp size={14} weight="bold" />
+        </button>
+      </div>
     </form>
   )
 }

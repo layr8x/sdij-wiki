@@ -99,14 +99,21 @@ async function main() {
   const me = await client.me();
   console.log(`[auth] ${me.email || me.id}`);
 
-  // 채팅 ID 목록 — Supabase 기본 1000 limit 회피
-  const { data: chats, error: chatsErr } = await supabase
-    .from('kakao_partner_chats')
-    .select('chat_id, nickname, last_log_id')
-    .eq('profile_id', PROFILE_ID)
-    .order('last_log_send_at', { ascending: false })
-    .range(0, 9999);
-  if (chatsErr) throw chatsErr;
+  // 채팅 ID 목록 — PostgREST max-rows(보통 1000) 제한 회피: 1000개씩 페이지네이션
+  const chats = [];
+  const CHAT_PAGE = 1000;
+  for (let from = 0; ; from += CHAT_PAGE) {
+    const { data, error: chatsErr } = await supabase
+      .from('kakao_partner_chats')
+      .select('chat_id, nickname, last_log_id')
+      .eq('profile_id', PROFILE_ID)
+      .order('chat_id', { ascending: true })
+      .range(from, from + CHAT_PAGE - 1);
+    if (chatsErr) throw chatsErr;
+    if (!data || data.length === 0) break;
+    chats.push(...data);
+    if (data.length < CHAT_PAGE) break;
+  }
   console.log(`[plan] ${chats.length} chats to backfill`);
 
   const CONCURRENCY = Number(process.env.KAKAO_BACKFILL_CONCURRENCY || 8);

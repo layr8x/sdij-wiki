@@ -191,7 +191,7 @@ function MessageBubble({ role, children, meta, className }) {
         style={
           isUser
             ? { backgroundColor: CHATBOT_POINT, color: 'white', borderBottomRightRadius: 4 }
-            : { backgroundColor: 'var(--muted)', color: 'var(--foreground)', borderBottomLeftRadius: 4 }
+            : { backgroundColor: '#F7F7F7', color: 'var(--foreground)', borderBottomLeftRadius: 4, border: '1px solid #E8E8E8' }
         }
       >
         {typeof children === 'string' ? (

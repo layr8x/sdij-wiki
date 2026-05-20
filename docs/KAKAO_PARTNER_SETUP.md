@@ -68,9 +68,17 @@ npm install
    _kawlt=...; _kawltea=...; _karmt=...; TIARA=...; _T=...
    ```
 
-### 3-2. Profile ID
+### 3-2. Profile ID (다중 채널 가능)
 
-URL 의 `/_VGAQn/` 부분이 profile ID. 본인 채널이 다르면 확인.
+URL 의 `/_VGAQn/` 부분이 profile ID. 동일 카카오 계정에 매니저 권한이 있는 모든
+채널을 한 번에 수집할 수 있습니다 — `.env.local` 에 콤마(,) 로 나열:
+
+```bash
+KAKAO_PARTNER_PROFILE_IDS=_VGAQn,_TkpPG,_xfxilXn
+```
+
+1 프로세스가 N개 WS 연결을 병렬 유지하므로 launchd plist 는 1개로 충분합니다.
+백워드 호환을 위해 단수 변수 `KAKAO_PARTNER_PROFILE_ID` 도 fallback 으로 인식됩니다.
 
 ### 3-3. Supabase service_role key
 
@@ -83,7 +91,8 @@ Supabase Dashboard → Project Settings → API → `service_role` `secret` 키 
 저장소 루트에 `.env.local` 생성 (이미 `.gitignore` 됨):
 
 ```bash
-KAKAO_PARTNER_PROFILE_ID=_VGAQn
+# 다중 채널 (시대인재 마이클래스 / 라이브 / C)
+KAKAO_PARTNER_PROFILE_IDS=_VGAQn,_TkpPG,_xfxilXn
 KAKAO_PARTNER_COOKIE='_kawlt=...; _kawltea=...; ...'
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
@@ -99,11 +108,22 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 npm run kakao:bootstrap
 ```
 
-기대 출력:
+기대 출력 (다중 채널):
 ```
+[boot] bootstrapping 3 channel(s): _VGAQn, _TkpPG, _xfxilXn
+
+=== profile _VGAQn ===
 [auth] logged in as basis9@kakao.com
-[page 0] received=37 new=37 upserted=37
-[done] totalChats=37 upserted=37
+[_VGAQn page 0] received=37 new=37 has_next=false grand=37
+[_VGAQn done] totalChats=37 upserted=37
+
+=== profile _TkpPG ===
+...
+
+[summary]
+  _VGAQn: chats=37 upserted=37
+  _TkpPG: chats=12 upserted=12
+  _xfxilXn: chats=8 upserted=8
 ```
 
 Supabase 에서 확인:
@@ -121,8 +141,8 @@ select count(*), max(last_log_send_at) from kakao_partner_chats;
 npm run kakao:stream
 ```
 
-새 메시지가 들어오면 첫 번째 frame 의 raw payload 가
-`./kakao-partner-raw.log` 와 콘솔에 동시에 출력됨.
+새 메시지가 들어오면 첫 번째 frame 의 raw payload 가 채널별로
+`./kakao-partner-raw-<profile_id>.log` 파일과 콘솔에 동시에 출력됨.
 
 → **payload 구조 확인 후 `_handlePayload()` 의 휴리스틱(log_id/chat_id/text 추출)
 정확도 점검**. 실제 키 이름이 다르면 PR 로 매핑 보강.
@@ -183,6 +203,8 @@ order by last_log_send_at desc;
 | WS 가 즉시 close 됨 | `origin` 헤더 누락 | 코드에 이미 포함, 쿠키 누락 의심 |
 | `payload (unmatched)` 만 나옴 | push payload 키가 휴리스틱과 다름 | 덤프 파일 보고 `_handlePayload()` 수정 |
 | reconnect 무한 루프 | 쿠키 만료 또는 차단 | 데몬 중지 후 쿠키 갱신 |
+| 일부 채널만 reconnect | 해당 채널 매니저 권한 없음 / 채널 비활성 | `[<profile_id>]` 로그 확인 후 IDS 에서 제외 |
+| 같은 쿠키 3 WS 동시 연결 거부 | 카카오 측 일시 차단 | `KAKAO_PARTNER_STAGGER_MS=5000` 으로 분산 |
 
 ---
 

@@ -102,25 +102,25 @@ export default function HomePage() {
         }
       />
 
-      {/* ─── Stat Cards (3) ─────────────────────────────────────── */}
+      {/* ─── Stat Cards (3) — 실제 SSOT 기반 ─────────────────────── */}
       <section className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="총 가이드"
+          label="등록 가이드"
           value={`${(stats?.totalGuides ?? totalGuides).toLocaleString('ko-KR')}개`}
-          footerTitle="발행된 가이드 수"
-          footerDesc="status=published 기준"
+          footerTitle="시트 Q&A + 컨플 인덱스 합산"
+          footerDesc="실장님 SSOT 25 + FVSOL 130 + AMS 1"
         />
         <StatCard
           label="누적 조회수"
-          value={(stats?.totalViews ?? 0).toLocaleString('ko-KR')}
-          footerTitle={stats?.helpfulRate != null ? `만족도 ${stats.helpfulRate}%` : '만족도 집계 중'}
-          footerDesc="전체 가이드 합산"
+          value={stats?.totalViews != null ? stats.totalViews.toLocaleString('ko-KR') : '집계 전'}
+          footerTitle={stats?.helpfulRate != null ? `만족도 ${stats.helpfulRate}%` : 'Supabase 연결 후 실측'}
+          footerDesc="View/Feedback 로깅 활성화 시 표시"
         />
         <StatCard
           label="최근 업데이트"
-          value={recent5[0]?.updated_at ?? '—'}
-          footerTitle={recent5[0]?.title ?? '—'}
-          footerDesc={`${recent5[0]?.module ?? ''}${recent5[0]?.version ? ' · ' + recent5[0].version : ''}`}
+          value={stats?.recentDate ?? '2026-05-20'}
+          footerTitle="회원상세 환불 팝업 추후 입력 기능"
+          footerDesc="AMS · 청구·환불 (Confluence 2076704794)"
         />
       </section>
 

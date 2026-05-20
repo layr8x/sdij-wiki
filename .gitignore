@@ -30,3 +30,9 @@ dist-ssr
 _*.mjs
 kakao-partner-raw.log
 kakao-stream.log
+.vercelignore 2
+files/
+.claude/
+
+# kakao cookie 백업도 절대 커밋 금지
+.env.local*

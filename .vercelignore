@@ -8,7 +8,6 @@ yarn-error.log
 # Git files
 .git
 .gitignore
-
 # Test files
 .vitest
 *.test.js
@@ -17,35 +16,27 @@ yarn-error.log
 *.spec.ts
 e2e
 __tests__
-
 # Documentation
 docs
 *.md
-
 # IDE
 .vscode
 .idea
 *.swp
 *.swo
 *~
-
 # Playwright
 .playwright
 test-results
-
 # ESLint
 .eslintcache
-
 # Build outputs (not needed in Vercel)
 dist
 .next
 out
-
 # Supabase (Edge Functions + migrations — deployed separately via supabase CLI)
 # Vercel must NOT see these .ts files; they target Deno runtime, not Node.
 supabase
 # Supabase (Edge Functions / migrations / Deno-only code) — 별도 배포
-supabase
-
 # Backend scripts (Node-only — Vercel 빌드와 무관)
 scripts

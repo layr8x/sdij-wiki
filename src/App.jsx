@@ -1,8 +1,28 @@
 // src/App.jsx — shadcn/ui 표준 + React Query + Toast + 모든 Provider
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 import Layout from './components/common/Layout'
+
+/**
+ * Suspense fallback — lazy route 로드 중 표시될 placeholder.
+ * 2026-05-19 v5: 누락된 정의 보강 (이전엔 ReferenceError로 마운트 실패)
+ */
+function PageSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 p-8 max-w-5xl mx-auto" role="status" aria-label="페이지 로딩 중">
+      <Skeleton className="h-9 w-2/3" />
+      <Skeleton className="h-5 w-full" />
+      <Skeleton className="h-5 w-5/6" />
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Skeleton className="h-28" />
+        <Skeleton className="h-28" />
+        <Skeleton className="h-28" />
+      </div>
+    </div>
+  )
+}
 import SearchOverlay from './components/search/SearchOverlay'
 import { SearchProvider } from './store/searchStore'
 import { I18nProvider } from './store/i18nStore'
@@ -28,6 +48,7 @@ const AdminOverviewPage    = lazy(() => import('./pages/admin/AdminOverviewPage'
 const AdminGuidesPage      = lazy(() => import('./pages/admin/AdminGuidesPage'))
 const AdminFeedbackPage    = lazy(() => import('./pages/admin/AdminFeedbackPage'))
 const AdminIntegrationPage = lazy(() => import('./pages/admin/AdminIntegrationPage'))
+const AdminConsultsPage    = lazy(() => import('./pages/admin/AdminConsultsPage'))
 
 // React Query 클라이언트
 const queryClient = new QueryClient({
@@ -83,6 +104,9 @@ export default function App() {
                         } />
                         <Route path="integration" element={
                           <Suspense fallback={<PageSkeleton />}><AdminIntegrationPage /></Suspense>
+                        } />
+                        <Route path="consults" element={
+                          <RouteBoundary><AdminConsultsPage /></RouteBoundary>
                         } />
                       </Route>
                     </Route>

@@ -14,15 +14,12 @@
 import { KakaoPartnerClient } from './lib/kakao-partner-client.mjs';
 import { getAdminClient } from './lib/supabase-admin.mjs';
 
+const PROFILE_ID = process.env.KAKAO_PARTNER_PROFILE_ID;
 const COOKIE = process.env.KAKAO_PARTNER_COOKIE;
 const PAGE_DELAY_MS = Number(process.env.KAKAO_BACKFILL_DELAY_MS || 250);
 const MAX_PAGES_PER_CHAT = Number(process.env.KAKAO_BACKFILL_MAX_PAGES || 200);
 
-function parseProfileIds() {
-  const raw = process.env.KAKAO_PARTNER_PROFILE_IDS || process.env.KAKAO_PARTNER_PROFILE_ID || '';
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
-}
-
+const client = new KakaoPartnerClient({ cookie: COOKIE, profileId: PROFILE_ID });
 const supabase = getAdminClient();
 
 function logToRow(item, profileId, chatId) {
@@ -56,106 +53,94 @@ function logToRow(item, profileId, chatId) {
   };
 }
 
-async function backfillChat(client, profileId, chatId) {
+async function backfillChat(chatId) {
   let totalInserted = 0;
   let oldestLogId = null;
   let lastInsertedId = null;
+  // 카카오 chatlogs 페이지네이션 실측:
+  //   ?size=500          → 가장 최근 N건 (has_prev: true 면 더 과거 있음)
+  //   ?since=<id>&direct=prev → 그 id 이전(더 과거) N건
   for (let page = 0; page < MAX_PAGES_PER_CHAT; page++) {
     const qs = page === 0
       ? `size=500`
       : `since=${oldestLogId}&direct=prev&size=500`;
-    const url = `/api/profiles/${profileId}/chats/${chatId}/chatlogs?${qs}`;
+    const url = `/api/profiles/${PROFILE_ID}/chats/${chatId}/chatlogs?${qs}`;
     let res;
     try {
       res = await client._fetch(url);
     } catch (e) {
-      console.error(`  [${profileId} chat ${chatId} page ${page}] fetch fail:`, e.message);
+      console.error(`  [chat ${chatId} page ${page}] fetch fail:`, e.message);
       return { totalInserted, error: e.message };
     }
     const items = res?.items || [];
     if (!items.length) break;
 
-    const rows = items.map((it) => logToRow(it, profileId, chatId));
+    const rows = items.map((it) => logToRow(it, PROFILE_ID, chatId));
     const { error } = await supabase
       .from('kakao_partner_messages')
       .upsert(rows, { onConflict: 'log_id' });
     if (error) {
-      console.error(`  [${profileId} chat ${chatId} page ${page}] upsert fail:`, error.message);
+      console.error(`  [chat ${chatId} page ${page}] upsert fail:`, error.message);
       return { totalInserted, error: error.message };
     }
     totalInserted += rows.length;
+    // items 는 시간순(과거→최근) 정렬, oldest 가 첫 element
     oldestLogId = rows[0].log_id;
     lastInsertedId = rows[rows.length - 1].log_id;
 
-    if (!res.has_prev) break;
+    if (!res.has_prev) break; // 더 과거 메시지 없음
     await new Promise((r) => setTimeout(r, PAGE_DELAY_MS));
   }
   return { totalInserted, lastLogId: lastInsertedId };
 }
 
-async function backfillProfile(profileId) {
-  console.log(`\n=== profile ${profileId} ===`);
-  const client = new KakaoPartnerClient({ cookie: COOKIE, profileId });
+async function main() {
+  // 인증 검증
   const me = await client.me();
-  console.log(`[${profileId} auth] ${me.email || me.id}`);
+  console.log(`[auth] ${me.email || me.id}`);
 
-  const { data: chats, error: chatsErr } = await supabase
-    .from('kakao_partner_chats')
-    .select('chat_id, nickname, last_log_id')
-    .eq('profile_id', profileId)
-    .order('last_log_send_at', { ascending: false })
-    .range(0, 9999);
-  if (chatsErr) throw chatsErr;
-  console.log(`[${profileId} plan] ${chats.length} chats to backfill`);
+  // 채팅 ID 목록 — PostgREST max-rows(보통 1000) 제한 회피: 1000개씩 페이지네이션
+  const chats = [];
+  const CHAT_PAGE = 1000;
+  for (let from = 0; ; from += CHAT_PAGE) {
+    const { data, error: chatsErr } = await supabase
+      .from('kakao_partner_chats')
+      .select('chat_id, nickname, last_log_id')
+      .eq('profile_id', PROFILE_ID)
+      .order('chat_id', { ascending: true })
+      .range(from, from + CHAT_PAGE - 1);
+    if (chatsErr) throw chatsErr;
+    if (!data || data.length === 0) break;
+    chats.push(...data);
+    if (data.length < CHAT_PAGE) break;
+  }
+  console.log(`[plan] ${chats.length} chats to backfill`);
 
   const CONCURRENCY = Number(process.env.KAKAO_BACKFILL_CONCURRENCY || 8);
   let grandTotal = 0;
   let done = 0;
   const startedAt = Date.now();
 
+  // 워커 N개로 큐 소비
   const queue = chats.slice();
-  async function worker() {
+  async function worker(wid) {
     while (queue.length > 0) {
       const chat = queue.shift();
       if (!chat) break;
-      const { totalInserted, lastLogId, error } = await backfillChat(client, profileId, chat.chat_id);
+      const { totalInserted, lastLogId, error } = await backfillChat(chat.chat_id);
       grandTotal += totalInserted;
       done++;
       const tag = error ? `ERR ${error}` : `last=${lastLogId || '-'}`;
       if (done % 25 === 0 || done === chats.length) {
         const eta = ((Date.now() - startedAt) / done * (chats.length - done) / 1000).toFixed(0);
-        console.log(`[${profileId} ${done}/${chats.length}] grand=${grandTotal} eta=${eta}s`);
+        console.log(`[${done}/${chats.length}] grand=${grandTotal} eta=${eta}s`);
       }
-      if (error) console.error(`  [${profileId} chat ${chat.chat_id}] ${tag}`);
+      if (error) console.error(`  [chat ${chat.chat_id}] ${tag}`);
       await new Promise((r) => setTimeout(r, 50 + Math.random() * 100));
     }
   }
-  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
-  console.log(`[${profileId} done] inserted ${grandTotal} messages across ${chats.length} chats in ${((Date.now()-startedAt)/1000).toFixed(1)}s`);
-  return { profileId, chats: chats.length, messages: grandTotal };
-}
-
-async function main() {
-  const profileIds = parseProfileIds();
-  if (profileIds.length === 0) {
-    throw new Error('KAKAO_PARTNER_PROFILE_IDS (or KAKAO_PARTNER_PROFILE_ID) is empty');
-  }
-  console.log(`[boot] backfilling ${profileIds.length} channel(s): ${profileIds.join(', ')}`);
-
-  const summary = [];
-  for (const pid of profileIds) {
-    try { summary.push(await backfillProfile(pid)); }
-    catch (e) {
-      console.error(`[${pid} fatal]`, e.message);
-      summary.push({ profileId: pid, error: e.message });
-    }
-  }
-
-  console.log('\n[summary]');
-  for (const r of summary) {
-    if (r.error) console.log(`  ${r.profileId}: ERROR ${r.error}`);
-    else console.log(`  ${r.profileId}: chats=${r.chats} messages=${r.messages}`);
-  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, (_, i) => worker(i)));
+  console.log(`\n[done] inserted ${grandTotal} messages across ${chats.length} chats in ${(Date.now()-startedAt)/1000}s`);
 }
 
 main().catch((e) => {

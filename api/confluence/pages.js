@@ -2,7 +2,7 @@
 // Confluence 페이지 생성/수정 프록시
 
 import { createClient } from '@supabase/supabase-js'
-import ConfluenceClient from '../lib/confluence-client.js'
+import ConfluenceClient from '../_lib/confluence-client.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,

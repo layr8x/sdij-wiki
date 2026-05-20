@@ -246,9 +246,11 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
         })
       }
 
-      // v5+: 부정 시그널 빈도가 높은 카테고리 (예: player 47%, okta 31%) — 자동 매니저 추천
-      const negThreshold = NEGATIVE_SIGNAL_BY_CATEGORY[qa.category] || 0
-      if (detection.isNegative || negThreshold >= 0.30) {
+      // v5+: 부정 시그널 빈도가 높은 카테고리 (실데이터 2026-05-20: payment_refund 63.6%, video_playback 25.6%) — 자동 매니저 추천
+      // 구조 변경: NEGATIVE_SIGNAL_BY_CATEGORY[cat] = { rate, total, negative, action } | number (legacy)
+      const negEntry = NEGATIVE_SIGNAL_BY_CATEGORY[qa.category]
+      const negRate = typeof negEntry === 'object' && negEntry !== null ? (negEntry.rate ?? 0) : (negEntry || 0)
+      if (detection.isNegative || negRate >= 0.25) {
         const recommended = getRecommendedManagers(qa.category)
         if (recommended.length > 0) {
           addMessage({

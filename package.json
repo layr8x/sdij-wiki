@@ -25,7 +25,8 @@
     "kakao:status": "node --env-file=.env.local scripts/kakao-partner-status.mjs",
     "kakao:refresh-cookie": "node scripts/kakao-partner-refresh-cookie.mjs",
     "kakao:export": "node --env-file=.env.local scripts/kakao-partner-export-csv.mjs",
-    "kakao:dashboard": "node --env-file=.env.local scripts/kakao-partner-dashboard.mjs"
+    "kakao:dashboard": "node --env-file=.env.local scripts/kakao-partner-dashboard.mjs",
+    "kakao:sheets-sync": "node --env-file=.env.local scripts/kakao-partner-sheets-sync.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

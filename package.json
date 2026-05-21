@@ -23,7 +23,9 @@
     "kakao:backfill:all": "node --env-file=.env.local scripts/kakao-partner-run-all.mjs kakao-partner-backfill.mjs",
     "kakao:stream:all": "node --env-file=.env.local scripts/kakao-partner-multi-stream.mjs",
     "kakao:status": "node --env-file=.env.local scripts/kakao-partner-status.mjs",
-    "kakao:refresh-cookie": "node scripts/kakao-partner-refresh-cookie.mjs"
+    "kakao:refresh-cookie": "node scripts/kakao-partner-refresh-cookie.mjs",
+    "kakao:export": "node --env-file=.env.local scripts/kakao-partner-export-csv.mjs",
+    "kakao:dashboard": "node --env-file=.env.local scripts/kakao-partner-dashboard.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

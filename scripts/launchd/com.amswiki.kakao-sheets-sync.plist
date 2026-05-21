@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Supabase → Google Sheets 2분 주기 동기화 (StartInterval 120s).
+  사전: google-service-account.json 배치 + 시트를 서비스계정 이메일로 편집자 공유.
+  설치:
+    cp scripts/launchd/com.amswiki.kakao-sheets-sync.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.amswiki.kakao-sheets-sync.plist
+    tail -f ~/Library/Logs/ams-wiki/kakao-sheets-sync.log
+  중지: launchctl unload ~/Library/LaunchAgents/com.amswiki.kakao-sheets-sync.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.amswiki.kakao-sheets-sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>--env-file=.env.local</string>
+    <string>scripts/kakao-partner-sheets-sync.mjs</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/layr8x/Library/Mobile Documents/com~apple~CloudDocs/🕹️ layr8x/ams-wiki</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StartInterval</key>
+  <integer>120</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/layr8x/Library/Logs/ams-wiki/kakao-sheets-sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/layr8x/Library/Logs/ams-wiki/kakao-sheets-sync.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>NODE_ENV</key>
+    <string>production</string>
+  </dict>
+</dict>
+</plist>

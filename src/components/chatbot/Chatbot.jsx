@@ -2,9 +2,9 @@
 // AMS Wiki 챗봇 통합 컴포넌트 — FAB + Widget + 모든 sub-component
 //
 // 디자인 토큰:
-//  - 브랜드 #161616, 포인트 #0043CE (사용자 지정)
-//  - Pretendard (Onyx 정책)
-//  - shadcn/ui Button/Avatar/Badge/ScrollArea/Separator 활용
+//  - IBM Carbon 토큰 매핑 (Figma: AMS Wiki — 챗봇 컴포넌트 라이브러리 v1)
+//  - 브랜드/inverse #161616, FAB navy #001D6C, 포인트/interactive #0043CE
+//  - Pretendard · 샤프 코너(카드 4px · 버튼 2px · 칩 pill)
 //
 // 사용법 (Layout.jsx 또는 App.jsx):
 //   import { Chatbot } from '@/components/chatbot'
@@ -18,19 +18,37 @@ import {
   ArrowUp,
   ThumbsUp,
   ThumbsDown,
-  WarningCircle,
+  Warning,
   Lightbulb,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  ArrowSquareOut,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useChatbot, CHATBOT_STAGES, MSG_TYPES } from './useChatbot'
 import { searchSuggestions } from './intents'
 
-const CHATBOT_BRAND = '#161616'
-const CHATBOT_POINT = '#0043CE'
-const CHATBOT_POINT_HOVER = '#0033A0'
-const CHATBOT_POINT_SOFT = '#EDF1FB'
-const CHATBOT_POINT_BORDER = '#B5CAF1'
+// ─── Carbon Design 토큰 ──────────────────────────────────────────────────
+const CHATBOT_BRAND = '#161616'              // background/inverse · text/primary
+const CHATBOT_POINT = '#0043CE'              // tag/blue · text/interactive (칩·링크·유저버블·전송)
+const CHATBOT_NAVY = '#001D6C'               // button/secondary — FAB
+const CHATBOT_NAVY_HOVER = '#00258A'         // button/secondary-hover
+const CHATBOT_LINK = '#003CE0'               // link/enabled
+const CHATBOT_TAG_BLUE_BG = '#EDF5FF'        // tag/blue/background
+const CHATBOT_TAG_BLUE_BORDER = '#D0E2FF'    // tag/blue/border
+const CHATBOT_TAG_GRAY = '#393939'           // tag/gray/color (칩 기본 텍스트)
+const CHATBOT_BORDER = 'rgba(22,22,22,0.08)' // border/primary
+const CHATBOT_BORDER_STRONG = 'rgba(22,22,22,0.24)' // border/secondary
+const CHATBOT_HELPER = 'rgba(22,22,22,0.56)' // text/helper
+const CHATBOT_PLACEHOLDER = 'rgba(22,22,22,0.32)' // text/placeholder (메타 타임스탬프)
+const CHATBOT_WARN_BG = '#FCF4D6'            // notification/warning-background
+const CHATBOT_WARN_BAR = '#F1C21B'           // support/caution-minor
+const CHATBOT_SUCCESS = '#0E6027'            // support/success
+const CHATBOT_ERROR = '#DA1E28'              // text/error
+// 레거시 별칭 — 기존 컴포넌트(인용·온보딩·힌트) 참조를 Carbon 토큰으로 통일
+const CHATBOT_POINT_SOFT = CHATBOT_TAG_BLUE_BG
+const CHATBOT_POINT_BORDER = CHATBOT_TAG_BLUE_BORDER
 
 // v4 디자인 디벨롭: 모바일 반응형 + 다크모드 감지
 function useIsMobile() {
@@ -76,9 +94,9 @@ function ChatbotFAB({ onClick, hasNotification = false }) {
           'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200',
           hasNotification && 'chatbot-fab-pulse'
         )}
-        style={{ backgroundColor: CHATBOT_POINT }}
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = CHATBOT_POINT_HOVER)}
-        onMouseLeave={e => (e.currentTarget.style.backgroundColor = CHATBOT_POINT)}
+        style={{ backgroundColor: CHATBOT_NAVY }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = CHATBOT_NAVY_HOVER)}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = CHATBOT_NAVY)}
       >
         <ChatCircleText size={isMobile ? 22 : 24} weight="fill" />
         {hasNotification && (
@@ -97,46 +115,35 @@ function ChatbotFAB({ onClick, hasNotification = false }) {
 function ChatbotHeader({ onClose, onReset }) {
   return (
     <div
-      className="relative flex items-center gap-3 px-5 py-4 overflow-hidden"
-      style={{ backgroundColor: CHATBOT_BRAND, color: 'white' }}
+      className="relative flex items-center gap-3 px-4 py-3 overflow-hidden"
+      style={{ backgroundColor: CHATBOT_BRAND, color: '#f4f4f4' }}
     >
-      {/* Point radial glow */}
+      {/* Point radial glow (Figma: WidgetHeader · point radial glow) */}
       <div
-        className="absolute -top-10 -right-10 h-32 w-32 rounded-full blur-2xl opacity-30 pointer-events-none"
+        className="absolute -top-12 -right-8 h-32 w-32 rounded-full blur-2xl opacity-40 pointer-events-none"
         style={{ backgroundColor: CHATBOT_POINT }}
       />
-      <Avatar
-        className="h-9 w-9 ring-2 relative shrink-0"
-        style={{ '--tw-ring-color': `${CHATBOT_POINT}40` }}
-      >
-        <AvatarFallback
-          style={{ backgroundColor: CHATBOT_POINT, color: 'white' }}
-          className="font-bold text-sm"
-        >
-          AW
-        </AvatarFallback>
-      </Avatar>
       <div className="relative flex-1 min-w-0">
-        <div className="text-sm font-bold tracking-tight leading-tight">AMS Wiki</div>
-        <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80 mt-0.5 flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          AI Agent · 응답 중
+        <div className="text-[18px] font-semibold tracking-tight leading-tight">AMS Wiki</div>
+        <div className="text-[11px] font-medium opacity-80 mt-0.5 flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: '#24A148' }} />
+          AI AGENT · 응답 중
         </div>
       </div>
-      <div className="relative flex gap-1">
+      <div className="relative flex gap-0.5">
         <button
           onClick={onReset}
-          className="h-7 w-7 rounded-md flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-white/10 transition-all"
+          className="h-8 w-8 rounded-md flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-white/10 transition-all"
           aria-label="새 대화 시작"
         >
-          <ArrowsClockwise size={16} />
+          <ArrowsClockwise size={18} />
         </button>
         <button
           onClick={onClose}
-          className="h-7 w-7 rounded-md flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-white/10 transition-all"
+          className="h-8 w-8 rounded-md flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-white/10 transition-all"
           aria-label="닫기 (Esc)"
         >
-          <X size={16} />
+          <X size={20} />
         </button>
       </div>
     </div>
@@ -179,19 +186,17 @@ function MessageBubble({ role, children, meta, className }) {
   return (
     <div
       className={cn(
-        'mb-3 max-w-[85%] animate-in fade-in slide-in-from-bottom-1 duration-300',
-        isUser ? 'ml-auto text-right' : 'mr-auto',
+        'mb-3 max-w-[85%] flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-1 duration-300',
+        isUser ? 'ml-auto items-end' : 'mr-auto items-start',
         className
       )}
     >
       <div
-        className={cn(
-          'inline-block px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed text-left'
-        )}
+        className="inline-block px-4 py-3 rounded-[4px] text-[15px] leading-[1.6] text-left"
         style={
           isUser
-            ? { backgroundColor: CHATBOT_POINT, color: 'white', borderBottomRightRadius: 4 }
-            : { backgroundColor: '#F7F7F7', color: 'var(--foreground)', borderBottomLeftRadius: 4, border: '1px solid #E8E8E8' }
+            ? { backgroundColor: CHATBOT_POINT, color: '#ffffff' }
+            : { backgroundColor: '#ffffff', color: CHATBOT_BRAND, border: `1px solid ${CHATBOT_BORDER}` }
         }
       >
         {typeof children === 'string' ? (
@@ -201,7 +206,7 @@ function MessageBubble({ role, children, meta, className }) {
         )}
       </div>
       {meta && (
-        <div className="text-[10px] text-muted-foreground/80 mt-1 px-1.5 font-medium">
+        <div className="text-[12px] px-0.5 font-normal" style={{ color: CHATBOT_PLACEHOLDER }}>
           {meta}
         </div>
       )}
@@ -213,16 +218,12 @@ function MessageBubble({ role, children, meta, className }) {
 function ContextBanner({ contextLabel }) {
   return (
     <div
-      className="rounded-lg px-3 py-2.5 text-[11.5px] flex items-center gap-1.5 leading-relaxed"
-      style={{
-        backgroundColor: CHATBOT_POINT_SOFT,
-        border: `1px solid ${CHATBOT_POINT_BORDER}`,
-        color: 'var(--foreground)',
-      }}
+      className="rounded-[4px] px-4 py-3 text-[14px] flex items-center gap-2 leading-[1.6]"
+      style={{ backgroundColor: CHATBOT_TAG_BLUE_BG, color: CHATBOT_BRAND }}
     >
-      <span className="font-bold" style={{ color: CHATBOT_POINT }}>◆</span>
+      <MapPin size={20} weight="fill" className="shrink-0" style={{ color: CHATBOT_POINT }} />
       <span>
-        현재 <b>{contextLabel}</b> 화면을 보고 계세요.
+        현재 <b className="font-semibold">{contextLabel}</b> 화면을 보고 계세요.
       </span>
     </div>
   )
@@ -231,21 +232,22 @@ function ContextBanner({ contextLabel }) {
 // ─── Capability Box ─────────────────────────────────────────────────────
 function CapabilityBox() {
   return (
-    <div className="rounded-lg border bg-muted/60 px-3 py-3 text-[11.5px] leading-relaxed space-y-2">
-      <div className="flex gap-2">
-        <span style={{ color: CHATBOT_POINT }} className="font-bold shrink-0">✓</span>
+    <div
+      className="rounded-[4px] px-4 py-3.5 text-[13px] leading-[1.5] space-y-3"
+      style={{ backgroundColor: '#ffffff', border: `1px solid ${CHATBOT_BORDER}` }}
+    >
+      <div className="flex gap-2.5">
+        <CheckCircle size={20} weight="fill" className="shrink-0 mt-0.5" style={{ color: CHATBOT_SUCCESS }} />
         <div>
-          <b className="text-foreground">도와드릴 수 있어요</b>
-          <br />
-          가이드 검색 · FAQ 답변 · 회원 조회 (개인정보 제외)
+          <b className="font-semibold text-[14px]" style={{ color: CHATBOT_BRAND }}>도와드릴 수 있어요</b>
+          <div style={{ color: CHATBOT_HELPER }}>가이드 검색 · FAQ 답변 · 회원 조회 (개인정보 제외)</div>
         </div>
       </div>
-      <div className="flex gap-2">
-        <span className="text-destructive font-bold shrink-0">✗</span>
+      <div className="flex gap-2.5">
+        <XCircle size={20} weight="fill" className="shrink-0 mt-0.5" style={{ color: CHATBOT_ERROR }} />
         <div>
-          <b className="text-foreground">직접 처리는 어려워요</b>
-          <br />
-          결제 환불 · 회원정보 수정 · 권한 변경
+          <b className="font-semibold text-[14px]" style={{ color: CHATBOT_BRAND }}>직접 처리는 어려워요</b>
+          <div style={{ color: CHATBOT_HELPER }}>결제 환불 · 회원정보 수정 · 권한 변경</div>
         </div>
       </div>
     </div>
@@ -261,20 +263,17 @@ function QuickReplies({ replies, onClick }) {
         <button
           key={i}
           onClick={() => onClick(reply)}
-          className={cn(
-            'rounded-full border bg-background px-3 py-1.5 text-[11.5px] font-medium',
-            'text-foreground/80 transition-all duration-150',
-            'hover:text-white hover:border-transparent'
-          )}
+          className="rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-all duration-150"
+          style={{ backgroundColor: '#ffffff', borderColor: CHATBOT_BORDER, color: CHATBOT_TAG_GRAY }}
           onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = CHATBOT_POINT
-            e.currentTarget.style.color = 'white'
+            e.currentTarget.style.backgroundColor = CHATBOT_TAG_BLUE_BG
+            e.currentTarget.style.color = CHATBOT_POINT
             e.currentTarget.style.borderColor = CHATBOT_POINT
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = ''
-            e.currentTarget.style.color = ''
-            e.currentTarget.style.borderColor = ''
+            e.currentTarget.style.backgroundColor = '#ffffff'
+            e.currentTarget.style.color = CHATBOT_TAG_GRAY
+            e.currentTarget.style.borderColor = CHATBOT_BORDER
           }}
         >
           {reply}
@@ -286,22 +285,28 @@ function QuickReplies({ replies, onClick }) {
 
 // ─── Guide Card ─────────────────────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars
-function GuideCard({ category, title, docSlug, confidence, onOpen }) {
+function GuideCard({ category, title, steps, docSlug, confidence, onOpen }) {
   return (
     <button
       onClick={() => onOpen?.(docSlug)}
-      className="w-full text-left mt-2.5 rounded-lg border bg-background p-3 transition-all hover:shadow-sm"
-      style={{ borderLeft: `3px solid ${CHATBOT_POINT}` }}
+      className="w-full text-left mt-2.5 rounded-[4px] overflow-hidden flex items-stretch transition-all hover:shadow-sm"
+      style={{ backgroundColor: '#ffffff', border: `1px solid ${CHATBOT_BORDER}` }}
     >
-      <div
-        className="text-[10px] font-bold uppercase tracking-wider"
-        style={{ color: CHATBOT_POINT }}
-      >
-        📘 {category}
-      </div>
-      <div className="text-[13px] font-semibold mt-1 leading-snug text-foreground">{title}</div>
-      <div className="text-[11.5px] mt-1 underline" style={{ color: CHATBOT_POINT }}>
-        가이드 열기 →
+      <span className="w-1 shrink-0 self-stretch" style={{ backgroundColor: CHATBOT_POINT }} aria-hidden />
+      <div className="flex flex-col gap-1.5 py-3 pr-4 pl-3 min-w-0">
+        <div className="text-[13px] font-semibold" style={{ color: CHATBOT_POINT }}>
+          📘 {category}
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <div className="text-[15px] font-semibold leading-snug" style={{ color: CHATBOT_BRAND }}>{title}</div>
+          {steps && (
+            <div className="text-[13px] leading-snug" style={{ color: CHATBOT_HELPER }}>{steps}</div>
+          )}
+        </div>
+        <span className="inline-flex items-center gap-1 text-[13px] underline" style={{ color: CHATBOT_LINK }}>
+          가이드 열기
+          <ArrowSquareOut size={15} weight="regular" />
+        </span>
       </div>
     </button>
   )
@@ -637,11 +642,11 @@ function AutocompleteSuggestions({ query, onSelect }) {
 // ─── Typing Indicator ───────────────────────────────────────────────────
 function TypingIndicator() {
   return (
-    <div className="mr-auto mb-3 inline-flex items-center gap-1 px-3.5 py-3 bg-muted rounded-2xl"
-         style={{ borderBottomLeftRadius: 4 }}>
-      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-pulse" style={{ animationDelay: '0ms' }} />
-      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-pulse" style={{ animationDelay: '200ms' }} />
-      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-pulse" style={{ animationDelay: '400ms' }} />
+    <div className="mr-auto mb-3 inline-flex items-center gap-1 px-4 py-3 rounded-[4px]"
+         style={{ backgroundColor: '#ffffff', border: `1px solid ${CHATBOT_BORDER}` }}>
+      <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: CHATBOT_HELPER, animationDelay: '0ms' }} />
+      <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: CHATBOT_HELPER, animationDelay: '200ms' }} />
+      <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: CHATBOT_HELPER, animationDelay: '400ms' }} />
     </div>
   )
 }
@@ -649,41 +654,49 @@ function TypingIndicator() {
 // ─── Escalation CTA ─────────────────────────────────────────────────────
 function EscalationCTA({ reason, onEscalate, slackTitle, tip }) {
   const labels = {
-    'low-confidence': '명확하지 않으면 직접 문의',
+    'low-confidence': '명확하지 않으면',
     'negative-signal': '긴급해 보이세요. 바로 도움이 필요하시면',
-    'negative-feedback': '플랫폼팀에 직접 문의',
+    'negative-feedback': '해결이 안 되시면',
     'self-solve-impossible': '직접 처리가 불가한 항목이에요',
     'partial-escalate': '아래 부분은 플서실 요청이 필요해요',
   }
   return (
     <div
-      className="mt-2.5 flex flex-col gap-1.5 px-3 py-2.5 rounded-lg bg-muted/60 text-[11.5px]"
-      style={{ borderLeft: '3px solid #F1C21B', border: '1px solid var(--border)', borderLeftWidth: '3px', borderLeftColor: '#F1C21B' }}
+      className="mt-2.5 rounded-[4px] overflow-hidden flex items-stretch"
+      style={{ backgroundColor: CHATBOT_WARN_BG, border: `1px solid ${CHATBOT_BORDER}` }}
     >
-      <div className="flex items-center gap-2">
-        <WarningCircle size={14} className="text-amber-600 shrink-0" />
-        <span className="font-medium text-foreground">{labels[reason] || '문의가 필요해요'}</span>
-        <button
-          onClick={onEscalate}
-          className="ml-auto px-3 py-1 rounded text-[11px] font-medium text-white"
-          style={{ backgroundColor: CHATBOT_BRAND }}
-        >
-          Slack 문의
-        </button>
+      <span className="w-1 shrink-0 self-stretch" style={{ backgroundColor: CHATBOT_WARN_BAR }} aria-hidden />
+      <div className="flex flex-col gap-1.5 py-2.5 px-3 min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <Warning size={20} weight="fill" className="shrink-0" style={{ color: CHATBOT_WARN_BAR }} />
+          <span className="text-[14px] font-medium" style={{ color: CHATBOT_BRAND }}>
+            {labels[reason] || '해결이 안 되시면'}
+          </span>
+          <button
+            onClick={onEscalate}
+            className="ml-auto shrink-0 px-3.5 h-8 rounded-[2px] text-[13px] font-medium transition-colors hover:bg-[#f4f4f4]"
+            style={{ backgroundColor: '#ffffff', border: `1px solid ${CHATBOT_BORDER_STRONG}`, color: CHATBOT_BRAND }}
+          >
+            플랫폼서비스실 문의
+          </button>
+        </div>
+        {slackTitle && (
+          <div className="text-[12px] pl-7 leading-snug" style={{ color: CHATBOT_HELPER }}>
+            <span className="opacity-80">제목 자동입력 → </span>
+            <code
+              className="px-1.5 py-0.5 rounded bg-white border font-mono text-[11px]"
+              style={{ color: CHATBOT_BRAND, borderColor: CHATBOT_BORDER }}
+            >
+              {slackTitle}
+            </code>
+          </div>
+        )}
+        {tip && (
+          <div className="text-[12px] pl-7 leading-snug" style={{ color: CHATBOT_HELPER }}>
+            💡 {tip}
+          </div>
+        )}
       </div>
-      {slackTitle && (
-        <div className="text-[10.5px] text-muted-foreground pl-5 leading-snug">
-          <span className="opacity-70">제목 자동입력 → </span>
-          <code className="px-1.5 py-0.5 rounded bg-background border text-foreground/85 font-mono text-[10px]">
-            {slackTitle}
-          </code>
-        </div>
-      )}
-      {tip && (
-        <div className="text-[10.5px] text-muted-foreground pl-5 leading-snug">
-          💡 {tip}
-        </div>
-      )}
     </div>
   )
 }
@@ -865,7 +878,7 @@ function ChatbotWidget({ chatbot, contextLabel, devMode, onOpenGuide }) {
   // 모바일: 풀스크린 / 데스크탑: 우측 하단 카드
   const widgetClass = isMobile
     ? 'fixed inset-0 z-50 rounded-none flex flex-col bg-background animate-in fade-in slide-in-from-bottom-4 duration-300'
-    : 'fixed bottom-24 right-6 z-50 w-[400px] h-[640px] max-h-[calc(100vh-7rem)] rounded-2xl overflow-hidden flex flex-col bg-background border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300'
+    : 'fixed bottom-24 right-6 z-50 w-[400px] h-[640px] max-h-[calc(100vh-7rem)] rounded-[8px] overflow-hidden flex flex-col bg-background border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300'
 
   return (
     <div
@@ -883,7 +896,8 @@ function ChatbotWidget({ chatbot, contextLabel, devMode, onOpenGuide }) {
 
       <div
         ref={bodyRef}
-        className="flex-1 overflow-y-auto px-4 py-4 bg-background"
+        className="flex-1 overflow-y-auto px-4 py-4"
+        style={{ backgroundColor: '#f4f4f4' }}
       >
         {/* v4: Onboarding Tour — 첫 방문자에게만 표시 (LocalStorage 기억) */}
         {chatbot.needsOnboarding && (
@@ -913,7 +927,7 @@ function ChatbotWidget({ chatbot, contextLabel, devMode, onOpenGuide }) {
 function ChatbotMessage({ msg, contextLabel, chatbot, onOpenGuide }) {
   switch (msg.type) {
     case MSG_TYPES.BOT_CONTEXT_BANNER:
-      return <MessageBubble role="bot"><ContextBanner contextLabel={contextLabel} /></MessageBubble>
+      return <div className="mb-3 max-w-[92%]"><ContextBanner contextLabel={contextLabel} /></div>
 
     case MSG_TYPES.BOT_TEXT:
       return (
@@ -948,7 +962,7 @@ function ChatbotMessage({ msg, contextLabel, chatbot, onOpenGuide }) {
       return <MessageBubble role="user" meta="방금">{msg.text}</MessageBubble>
 
     case MSG_TYPES.BOT_CAPABILITY:
-      return <MessageBubble role="bot"><CapabilityBox /></MessageBubble>
+      return <div className="mb-3 max-w-[92%]"><CapabilityBox /></div>
 
     case MSG_TYPES.BOT_TYPING:
       return <TypingIndicator />
@@ -966,6 +980,7 @@ function ChatbotMessage({ msg, contextLabel, chatbot, onOpenGuide }) {
           <GuideCard
             category={msg.category}
             title={msg.title}
+            steps={msg.steps}
             docSlug={msg.docSlug}
             confidence={msg.confidence}
             onOpen={onOpenGuide}

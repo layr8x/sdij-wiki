@@ -278,7 +278,7 @@ export async function fetchDashboardStats() {
     const amsCount = (AMS_GUIDES || []).length
     totalGuides = officialCount + fvsolCount + amsCount
     recentDate = (AMS_GUIDES?.[0]?.updatedAt) || recentDate
-  } catch (e) {
+  } catch {
     // fallback 정적값
   }
   return {

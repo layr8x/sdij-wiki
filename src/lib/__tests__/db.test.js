@@ -145,12 +145,15 @@ describe('db.js (mockData fallback)', () => {
   })
 
   describe('fetchDashboardStats', () => {
-    it('mock 집계 — totalGuides/totalViews/helpfulRate 포함', async () => {
+    it('mock 집계 — SSOT 기반 totalGuides + 미측정값 null', async () => {
       const s = await fetchDashboardStats()
-      expect(s.totalGuides).toBe(Object.keys(GUIDES).length)
-      expect(typeof s.totalViews).toBe('number')
-      expect(s.helpfulRate).toBe(89)
-      expect(s.searchCount).toBe(0)
+      // mock 폴백은 실제 SSOT(officialQa + FVSOL + AMS) 합계를 반환 (GUIDES 개수와 무관)
+      expect(typeof s.totalGuides).toBe('number')
+      expect(s.totalGuides).toBeGreaterThan(0)
+      // Supabase 미연결 시 조회수/만족도/검색수는 측정 전이라 null
+      expect(s.totalViews).toBeNull()
+      expect(s.helpfulRate).toBeNull()
+      expect(s.searchCount).toBeNull()
     })
   })
 

@@ -755,7 +755,7 @@ AMS 위키 프로젝트는 매주 금요일 위클리 회의를 진행한다.
 | #25 (commit `e0ccc67`) | `dpl_24hcbqaTVJTNMD1CuND7mVDqiEiA` | READY (production) |
 | #26 (commit `31c5025`) | 배포 자동 트리거됨 | 머지 직후 BUILDING → 1–2분 내 READY 예상 |
 
-운영 환경 URL: https://ams-wiki-git-main-layr8xs-projects.vercel.app
+운영 환경 URL: https://sdij-wiki.vercel.app
 
 ---
 

@@ -108,7 +108,7 @@ VITE_CONFLUENCE_EMAIL=<email>
 VITE_CONFLUENCE_TOKEN=<token>
 VITE_ENV=production
 VITE_ENABLE_ANALYTICS=true
-VITE_API_BASE_URL=https://sdij-ams-wiki.app
+VITE_API_BASE_URL=https://sdij-wiki.vercel.app
 ```
 
 ## 배포 프로세스

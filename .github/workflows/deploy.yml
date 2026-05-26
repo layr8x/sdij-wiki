@@ -37,7 +37,7 @@ jobs:
           VITE_CONFLUENCE_EMAIL: ${{ secrets.VITE_CONFLUENCE_EMAIL }}
           VITE_CONFLUENCE_TOKEN: ${{ secrets.VITE_CONFLUENCE_TOKEN }}
           VITE_ENV: production
-          VITE_API_BASE_URL: https://sdij-ams-wiki.app
+          VITE_API_BASE_URL: https://sdij-wiki.vercel.app
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

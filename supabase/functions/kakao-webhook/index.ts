@@ -138,11 +138,11 @@ Deno.serve(async (req: Request) => {
 
 function buildAutoReply(category: string): string {
   const replies: Record<string, string> = {
-    'video-content':   '영상 재생 관련 문의 감사합니다. 잠시 후 상담원이 답변드리겠습니다.\n임시 가이드: https://ams-wiki.app/guide/video-troubleshoot',
-    'qr-attendance':   'QR/출석 관련 문의 접수되었습니다. 카메라 권한 확인 가이드: https://ams-wiki.app/guide/qr-troubleshoot',
-    'school-link':     '학원 등록 연동 안내드리겠습니다: https://ams-wiki.app/guide/school-link',
+    'video-content':   '영상 재생 관련 문의 감사합니다. 잠시 후 상담원이 답변드리겠습니다.\n임시 가이드: https://sdij-wiki.vercel.app/guide/video-troubleshoot',
+    'qr-attendance':   'QR/출석 관련 문의 접수되었습니다. 카메라 권한 확인 가이드: https://sdij-wiki.vercel.app/guide/qr-troubleshoot',
+    'school-link':     '학원 등록 연동 안내드리겠습니다: https://sdij-wiki.vercel.app/guide/school-link',
     'refund-payment':  '환불 문의는 영업일 기준 1일 내 상담원이 안내드립니다.',
-    'parent-account':  '계정 통합 가이드: https://ams-wiki.app/guide/parent-account',
+    'parent-account':  '계정 통합 가이드: https://sdij-wiki.vercel.app/guide/parent-account',
   };
   return replies[category] ?? '문의가 접수되었습니다. 빠르게 답변드리겠습니다.';
 }

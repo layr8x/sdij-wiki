@@ -160,7 +160,7 @@ supabase/
 
 ## 프로젝트 링크
 
-- [라이브 데모](https://sdij-ams-wiki.app)
+- [라이브 데모](https://sdij-wiki.vercel.app)
 - [Vercel 대시보드](https://vercel.com/layr8xs-projects/ams-wiki)
 - [shadcn/ui 문서](https://ui.shadcn.com)
 - [Supabase 문서](https://supabase.com/docs)

@@ -17,7 +17,7 @@ jobs:
       - name: Add Custom Domain to Vercel
         id: add-domain
         run: |
-          DOMAIN="sdij-ams-wiki.app"
+          DOMAIN="sdij-wiki.vercel.app"
           RESPONSE=$(curl -s -X POST "https://api.vercel.com/v10/projects/${{ secrets.VERCEL_PROJECT_ID }}/domains" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
             -H "Content-Type: application/json" \
@@ -28,13 +28,13 @@ jobs:
 
       - name: Verify Domain Setup
         run: |
-          DOMAIN="sdij-ams-wiki.app"
+          DOMAIN="sdij-wiki.vercel.app"
           curl -s -X GET "https://api.vercel.com/v10/projects/${{ secrets.VERCEL_PROJECT_ID }}/domains?domain=${DOMAIN}" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | jq '.'
 
       - name: Update documentation
         run: |
-          DOMAIN="sdij-ams-wiki.app"
+          DOMAIN="sdij-wiki.vercel.app"
           sed -i "s|https://.*\.vercel\.app|https://${DOMAIN}|g" README.md
           sed -i "s|http://.*\.vercel\.app|https://${DOMAIN}|g" README.md
 
@@ -47,7 +47,7 @@ jobs:
             echo "No changes to commit"
           else
             git add README.md
-            git commit -m "chore: Update deployment domain to sdij-ams-wiki.app"
+            git commit -m "chore: Update deployment domain to sdij-wiki.vercel.app"
             git push origin main || true
           fi
 

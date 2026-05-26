@@ -23,7 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline
@@ -37,7 +36,7 @@ jobs:
           VITE_CONFLUENCE_EMAIL: ${{ secrets.VITE_CONFLUENCE_EMAIL }}
           VITE_CONFLUENCE_TOKEN: ${{ secrets.VITE_CONFLUENCE_TOKEN }}
           VITE_ENV: production
-          VITE_API_BASE_URL: https://sdij-ams-wiki.app
+          VITE_API_BASE_URL: https://sdij-wiki.vercel.app
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

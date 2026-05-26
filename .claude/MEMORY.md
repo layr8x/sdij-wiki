@@ -162,8 +162,8 @@ npm run sync:confluence       # Confluence 동기화
 ## 📊 배포
 
 ### Vercel 자동 배포
-- **프로덕션**: https://ams-wiki.vercel.app
-- **프리뷰**: https://ams-wiki-h6th.vercel.app
+- **프로덕션**: https://sdij-wiki.vercel.app
+- **프리뷰**: Vercel 브랜치별 자동 생성 (`ams-wiki-<hash>-layr8xs-projects.vercel.app`)
 - main 브랜치 푸시 → GitHub Actions → Vercel 자동 배포
 - 환경변수는 Vercel 프로젝트 설정에서 관리
 - Cron Jobs는 vercel.json에서 정의

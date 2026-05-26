@@ -32,6 +32,8 @@ import { TooltipProvider } from './components/ui/tooltip'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { RouteBoundary } from './components/common/RouteBoundary'
 import { RequireRole } from './components/common/RequireRole'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 // 코드 스플리팅 (lazy loading)
 const HomePage             = lazy(() => import('./pages/HomePage'))
@@ -148,6 +150,8 @@ export default function App() {
                   </Routes>
                   <SearchOverlay />
                   </BrowserRouter>
+                  <Analytics />
+                  <SpeedInsights />
                 </SearchProvider>
               </ToastProvider>
             </AuthProvider>

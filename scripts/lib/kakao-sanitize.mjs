@@ -38,6 +38,16 @@ const HAS_PHONE_OR_EMAIL_RE =
 // 줄 단독 한글 이름(2~4자)
 const STANDALONE_NAME_RE = /(^|\n)[ \t]*([가-힣]{2,4})[ \t]*(?=\r?\n|$)/g;
 
+// 깨진 유니코드(짝 안 맞는 surrogate) 제거. Postgres JSON 파서가 거부함.
+// 예: 깨진 이모지 1바이트만 남은 경우 → 제거.
+export function stripLoneSurrogates(s) {
+  if (s == null) return s;
+  return String(s).replace(
+    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
+    '',
+  );
+}
+
 // 이름 마스킹: 외자→*, 2자→앞+*, 3자+→앞+가운데(*)+뒤.
 export function maskName(name) {
   if (name == null) return name;
@@ -78,7 +88,7 @@ export function sanitizeRaw(raw) {
 export function sanitizeMessageRow(row) {
   if (!row) return row;
   const out = { ...row };
-  if (out.message != null) out.message = maskBody(out.message);
+  if (out.message != null) out.message = stripLoneSurrogates(maskBody(out.message));
   out.raw = sanitizeRaw(out.raw);
   return out;
 }
@@ -87,8 +97,10 @@ export function sanitizeMessageRow(row) {
 export function sanitizeChatRow(row) {
   if (!row) return row;
   const out = { ...row };
-  if (out.nickname) out.nickname = maskName(out.nickname);
-  if (out.last_message != null) out.last_message = maskBody(out.last_message);
+  if (out.nickname) out.nickname = stripLoneSurrogates(maskName(out.nickname));
+  if (out.last_message != null) {
+    out.last_message = stripLoneSurrogates(maskBody(out.last_message));
+  }
   out.raw = null;
   return out;
 }

@@ -1,8 +1,12 @@
 {
-  "name": "ams-wiki",
+  "name": "sdij-wiki",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "npm@10.9.7",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

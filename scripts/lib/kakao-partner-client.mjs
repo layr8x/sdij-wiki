@@ -19,6 +19,15 @@ export class KakaoPartnerClient {
     this.jitterMs = jitterMs;
   }
 
+  // 쿠키 만료 후 갱신된 값으로 런타임 교체 (장시간 데몬 자가복구용).
+  setCookie(cookie) {
+    if (cookie && cookie !== this.cookie) {
+      this.cookie = cookie;
+      return true;
+    }
+    return false;
+  }
+
   // 인간 트래픽 모방용 random delay
   async _jitter() {
     const ms = Math.floor(Math.random() * this.jitterMs) + 100;
@@ -41,7 +50,9 @@ export class KakaoPartnerClient {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status} ${path} :: ${body.slice(0, 200)}`);
+      const err = new Error(`HTTP ${res.status} ${path} :: ${body.slice(0, 200)}`);
+      err.status = res.status; // 401/403 → 쿠키 만료 판정에 사용
+      throw err;
     }
     const ct = res.headers.get('content-type') || '';
     return ct.includes('application/json') ? res.json() : res.text();

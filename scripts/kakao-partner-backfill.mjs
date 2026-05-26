@@ -13,6 +13,7 @@
 
 import { KakaoPartnerClient } from './lib/kakao-partner-client.mjs';
 import { getAdminClient } from './lib/supabase-admin.mjs';
+import { sanitizeMessageRow } from './lib/kakao-sanitize.mjs';
 
 const PROFILE_ID = process.env.KAKAO_PARTNER_PROFILE_ID;
 const COOKIE = process.env.KAKAO_PARTNER_COOKIE;
@@ -75,7 +76,7 @@ async function backfillChat(chatId) {
     const items = res?.items || [];
     if (!items.length) break;
 
-    const rows = items.map((it) => logToRow(it, PROFILE_ID, chatId));
+    const rows = items.map((it) => sanitizeMessageRow(logToRow(it, PROFILE_ID, chatId)));
     const { error } = await supabase
       .from('kakao_partner_messages')
       .upsert(rows, { onConflict: 'log_id' });

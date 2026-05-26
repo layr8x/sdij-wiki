@@ -43,6 +43,11 @@ supabase/migrations/20260512_kakao_partner.sql
 - `kakao_partner_messages` — 메시지 단건 (log_id PK, chat_id FK)
 - `kakao_partner_stream_state` — 스트림 재개 기준점 (profile_id PK)
 
+이어서 헬스 컬럼 마이그레이션도 적용 (수집 멈춤 원인 기록용, additive):
+```
+supabase/migrations/20260524_kakao_partner_stream_health.sql
+```
+
 ---
 
 ## 2. 의존성 설치
@@ -173,16 +178,40 @@ order by last_log_send_at desc;
 
 ---
 
-## 7. 트러블슈팅
+## 7. 쿠키 만료 자가복구 (수집 멈춤 방지)
+
+쿠키는 보통 1~4주면 만료된다. 과거엔 만료 시 데몬이 시작 단계 `me()` 401 에서
+`process.exit(1)` 으로 죽고, supervisor 가 5초마다 무한 재시작(폭주)하거나, 폴링이
+조용히 멈춰 **수집이 영구 정지**했다. 이제 다음과 같이 스스로 복구한다.
+
+**반응형 (데몬 자체)** — 401/403 을 만나면:
+1. `.env.local` 의 `KAKAO_PARTNER_COOKIE` 를 다시 읽어 외부에서 갱신된 쿠키를 즉시 픽업
+2. (macOS) `KAKAO_PARTNER_AUTO_REFRESH=1` 이면 Chrome 로컬 쿠키에서 자동 재추출 후 재시도
+3. 실패해도 죽지 않고 백오프(최대 5분) 후 재시도하며, 원인을
+   `kakao_partner_stream_state.last_error` 에 기록 → `npm run kakao:status` 로 확인
+
+**선제형 (스케줄)** — 6시간마다 쿠키를 미리 갱신해 만료 자체를 예방:
+```bash
+cp scripts/launchd/com.amswiki.kakao-cookie-refresh.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.amswiki.kakao-cookie-refresh.plist
+```
+(값이 바뀐 경우에만 `.env.local` 갱신하며, 데몬은 끊지 않음 — 다음 401 때 재읽음.)
+전제: **Chrome 으로 business.kakao.com 로그인 유지** + 최초 1회 키체인(Chrome Safe Storage) 허용.
+
+수집 상태 점검:
+```bash
+npm run kakao:status   # ✅ok / ⚠️STALE + heartbeat + last_error 표시
+```
+
+### 그 외 증상
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| `HTTP 401 /api/users/me` | 쿠키 만료 | 카카오 재로그인 후 쿠키 재추출 |
+| `⚠️STALE` + `last_error: auth 401` | 쿠키 만료 + 자동 갱신 실패 | Chrome 으로 카카오 재로그인 (자가복구가 다음 주기에 픽업) |
 | `HTTP 403 /chats/search` | 권한 부족 | 매니저 권한 가진 계정으로 재로그인 |
 | `ws/info HTTP 503` | 카카오 서버 점검 또는 IP 차단 | 30분 대기. 반복되면 jitter 늘리기 |
-| WS 가 즉시 close 됨 | `origin` 헤더 누락 | 코드에 이미 포함, 쿠키 누락 의심 |
 | `payload (unmatched)` 만 나옴 | push payload 키가 휴리스틱과 다름 | 덤프 파일 보고 `_handlePayload()` 수정 |
-| reconnect 무한 루프 | 쿠키 만료 또는 차단 | 데몬 중지 후 쿠키 갱신 |
+| `cookie refresh unavailable` | macOS 아님 / Chrome 로그아웃 | Chrome 재로그인 또는 수동 `npm run kakao:refresh-cookie` |
 
 ---
 

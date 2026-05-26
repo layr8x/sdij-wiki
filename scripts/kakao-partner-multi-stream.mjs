@@ -28,6 +28,7 @@ if (ids.length === 0) {
 console.log(`[multi] starting ${ids.length} channels: ${ids.join(', ')}`);
 
 const children = new Map();
+const failCount = new Map();
 let shuttingDown = false;
 
 function prefix(tag, buf) {
@@ -37,6 +38,7 @@ function prefix(tag, buf) {
 function startChild(pid, delay = 0) {
   setTimeout(() => {
     if (shuttingDown) return;
+    const startedAt = Date.now();
     const env = { ...process.env, KAKAO_PARTNER_PROFILE_ID: pid, KAKAO_PARTNER_DUMP_RAW: 'false' };
     const child = spawn(process.execPath, [STREAM], { env, stdio: ['ignore', 'pipe', 'pipe'] });
     children.set(pid, child);
@@ -45,11 +47,16 @@ function startChild(pid, delay = 0) {
     child.stderr.on('data', (d) => process.stderr.write(prefix(tag, d)));
     child.on('exit', (code, sig) => {
       children.delete(pid);
-      console.log(`${tag} exited code=${code} sig=${sig}`);
+      const uptime = Date.now() - startedAt;
+      console.log(`${tag} exited code=${code} sig=${sig} uptime=${Math.round(uptime / 1000)}s`);
       if (shuttingDown) return;
-      const backoff = 5000;
-      console.log(`${tag} restart in ${backoff}ms`);
-      startChild(pid, backoff);
+      // 충분히 오래 살아있었으면 backoff 리셋, 즉시 죽으면(쿠키 만료 등) 지수 증가 → 카카오 폭주 방지.
+      const fails = uptime > 60_000 ? 0 : (failCount.get(pid) || 0) + 1;
+      failCount.set(pid, fails);
+      const backoff = Math.min(5 * 60_000, 5000 * 2 ** Math.min(fails, 6));
+      const jitter = Math.floor(Math.random() * 2000);
+      console.log(`${tag} restart in ${backoff + jitter}ms (fails=${fails})`);
+      startChild(pid, backoff + jitter);
     });
     console.log(`${tag} started os_pid=${child.pid}`);
   }, delay);

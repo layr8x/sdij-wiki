@@ -12,6 +12,7 @@
 
 import { KakaoPartnerClient, chatToRow } from './lib/kakao-partner-client.mjs';
 import { getAdminClient } from './lib/supabase-admin.mjs';
+import { sanitizeChatRow } from './lib/kakao-sanitize.mjs';
 
 const PROFILE_ID = process.env.KAKAO_PARTNER_PROFILE_ID;
 const COOKIE = process.env.KAKAO_PARTNER_COOKIE;
@@ -45,7 +46,7 @@ async function main() {
     }
     totalSeen += newOnes;
 
-    const rows = items.map((it) => chatToRow(it, PROFILE_ID));
+    const rows = items.map((it) => sanitizeChatRow(chatToRow(it, PROFILE_ID)));
     const { error } = await supabase
       .from('kakao_partner_chats')
       .upsert(rows, { onConflict: 'chat_id' });

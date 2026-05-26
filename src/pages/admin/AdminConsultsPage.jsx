@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { supabase, isSupabaseEnabled } from '@/lib/supabase'
+import { maskBody, maskName } from '@/lib/maskPII'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -99,7 +100,7 @@ function useNicknames(profileId) {
           .order('chat_id', { ascending: true }).range(from, from + 999)
         if (error) throw error
         if (!data || !data.length) break
-        for (const r of data) map.set(String(r.chat_id), r.nickname || '')
+        for (const r of data) map.set(String(r.chat_id), maskName(r.nickname || ''))
         if (data.length < 1000) break
       }
       return map
@@ -240,7 +241,7 @@ export default function AdminConsultsPage() {
                       <Icon className="mr-1 size-3 shrink-0" />{senderText(m, nickMap)}
                     </Badge>
                     <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm text-foreground">
-                      {m.message || <span className="text-muted-foreground">(본문 없음)</span>}
+                      {maskBody(m.message) || <span className="text-muted-foreground">(본문 없음)</span>}
                     </p>
                   </li>
                 )

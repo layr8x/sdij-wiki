@@ -86,19 +86,34 @@ console.log(`[refresh] profile="${best.name}" cookies=${best.map.size} length=${
 
 const envPath = path.join(process.cwd(), '.env.local');
 let env = fs.readFileSync(envPath, 'utf8');
+const newVal = cookieStr.replace(/'/g, '');
+
+// 기존 값과 동일하면 쓰기/재시작 생략 → 주기적 cron 실행이 데몬을 헛되이 끊지 않게 함.
+const prev = env.match(/^KAKAO_PARTNER_COOKIE='?([^'\n]*)'?$/m);
+if (prev && prev[1] === newVal) {
+  console.log('[refresh] 쿠키 변경 없음 → .env.local/데몬 그대로 유지');
+  process.exit(0);
+}
+
 fs.writeFileSync(envPath + '.bak', env);
-const line = "KAKAO_PARTNER_COOKIE='" + cookieStr.replace(/'/g, '') + "'";
+const line = "KAKAO_PARTNER_COOKIE='" + newVal + "'";
 env = /^KAKAO_PARTNER_COOKIE=.*$/m.test(env)
   ? env.replace(/^KAKAO_PARTNER_COOKIE=.*$/m, line)
   : env + '\n' + line + '\n';
 fs.writeFileSync(envPath, env);
 console.log('[refresh] .env.local 갱신 (backup: .env.local.bak)');
 
-// 데몬 재시작(있으면)
-try {
-  const uid = process.getuid();
-  execSync(`launchctl kickstart -k gui/${uid}/com.amswiki.kakao-stream`, { stdio: 'ignore' });
-  console.log('[refresh] launchd 데몬 재시작 완료 (com.amswiki.kakao-stream)');
-} catch {
-  console.log('[refresh] 데몬 미등록/재시작 생략 — 수동 실행 시 npm run kakao:stream:all');
+// 데몬이 직접 호출한 자가복구/cron 경로에서는 재시작 생략 (자기 자신 kill 방지).
+// 실행 중 데몬은 .env.local 을 재읽어 새 쿠키를 픽업한다.
+if (process.env.KAKAO_SKIP_DAEMON_RESTART === '1') {
+  console.log('[refresh] KAKAO_SKIP_DAEMON_RESTART=1 → 데몬 재시작 생략 (실행 중 데몬이 .env.local 재읽음)');
+} else {
+  // 데몬 재시작(있으면)
+  try {
+    const uid = process.getuid();
+    execSync(`launchctl kickstart -k gui/${uid}/com.amswiki.kakao-stream`, { stdio: 'ignore' });
+    console.log('[refresh] launchd 데몬 재시작 완료 (com.amswiki.kakao-stream)');
+  } catch {
+    console.log('[refresh] 데몬 미등록/재시작 생략 — 수동 실행 시 npm run kakao:stream:all');
+  }
 }

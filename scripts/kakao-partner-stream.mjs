@@ -21,6 +21,7 @@ import path from 'node:path';
 import { KakaoPartnerClient, chatToRow } from './lib/kakao-partner-client.mjs';
 import { getAdminClient } from './lib/supabase-admin.mjs';
 import { readCookieFromEnvFile, maybeRefreshCookie, envFilePath } from './lib/kakao-cookie.mjs';
+import { sanitizeMessageRow, sanitizeChatRow } from './lib/kakao-sanitize.mjs';
 
 const PROFILE_ID = process.env.KAKAO_PARTNER_PROFILE_ID;
 const COOKIE = process.env.KAKAO_PARTNER_COOKIE;
@@ -315,14 +316,15 @@ class KakaoStream {
         raw: obj,
         source: 'ws_push',
       };
+      const safeRow = sanitizeMessageRow(row);
       try {
         const { error } = await this.supabase
           .from('kakao_partner_messages')
-          .upsert(row, { onConflict: 'log_id' });
+          .upsert(safeRow, { onConflict: 'log_id' });
         if (error) throw error;
-        this.lastSeenLogId = row.log_id;
+        this.lastSeenLogId = safeRow.log_id;
         await this._persistState({
-          last_seen_log_id: row.log_id,
+          last_seen_log_id: safeRow.log_id,
           total_messages_inc: 1,
         });
       } catch (e) {
@@ -416,15 +418,15 @@ class KakaoStream {
       const res = await this.client._fetch(`/api/profiles/${PROFILE_ID}/chats/${chatId}/chatlogs?size=200`);
       const items = res?.items || [];
       if (!items.length) return 0;
-      const rows = items.map((it) => this._logToRow(it, chatId));
+      const rows = items.map((it) => sanitizeMessageRow(this._logToRow(it, chatId)));
       const { error } = await this.supabase
         .from('kakao_partner_messages').upsert(rows, { onConflict: 'log_id' });
-      if (error) { this.log(`upsert ${chatId} fail:`, error.message); return 0; }
+      if (error) { this.log(`upsert ${chatId} fail:`, error.message); return -1; }
       this.lastSeenLogId = rows[rows.length - 1].log_id;
       return rows.length;
     } catch (e) {
       this.log(`chatlogs ${chatId} fail:`, e.message);
-      return 0;
+      return -1;
     }
   }
 
@@ -444,12 +446,16 @@ class KakaoStream {
           if (!apiLast) continue;
           if (this.lastLogByChat.get(cid) !== apiLast) {
             changed++;
-            upserted += await this._fetchRecent(cid);
-            this.lastLogByChat.set(cid, apiLast);
+            const n = await this._fetchRecent(cid);
+            // 실패(-1)면 커서 미전진 → 다음 tick 에서 재시도(영구 누락 차단)
+            if (n >= 0) {
+              upserted += n;
+              this.lastLogByChat.set(cid, apiLast);
+            }
           }
         }
         if (items.length) {
-          const rows = items.map((it) => chatToRow(it, PROFILE_ID));
+          const rows = items.map((it) => sanitizeChatRow(chatToRow(it, PROFILE_ID)));
           await this.supabase.from('kakao_partner_chats').upsert(rows, { onConflict: 'chat_id' });
         }
         await this._persistState({ last_error: null }); // 정상 폴 → 에러 상태 해제

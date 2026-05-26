@@ -17,7 +17,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: false },
+        // 새로고침 후에도 로그인 유지: localStorage 에 세션 저장 + 토큰 자동 갱신.
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
         global: { headers: { 'x-app-name': 'ams-wiki' } },
       })
     : null

@@ -18,6 +18,7 @@
     "sync:confluence": "node scripts/sync-confluence.mjs",
     "sync:kakao-chats": "node scripts/sync-kakao-chats.mjs",
     "classify:kakao": "node scripts/classify-kakao-csv.mjs",
+    "classify:kakao:db": "node --env-file=.env.local scripts/classify-kakao-stream.mjs",
     "update:cs-insights": "node scripts/update-cs-insights.mjs",
     "cs-pipeline": "npm run sync:kakao-chats && node scripts/run-cs-pipeline.mjs",
     "kakao:bootstrap": "node --env-file=.env.local scripts/kakao-partner-bootstrap.mjs",

@@ -13,6 +13,9 @@ import {
   incrementViews,
   fetchDashboardStats,
   fetchModuleStats,
+  fetchResponseTimeDistribution,
+  fetchChatCategoryDistribution,
+  fetchSentimentTrend,
 } from '../lib/db'
 
 // ─── 전체 가이드 목록 ─────────────────────────────────────────────────────────
@@ -109,6 +112,33 @@ export function useModuleStats() {
   return useQuery({
     queryKey: ['stats', 'modules'],
     queryFn: fetchModuleStats,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+// ─── 카카오 상담 응답시간 분포 ───────────────────────────────────────────────
+export function useResponseTimeDistribution(windowDays = 90) {
+  return useQuery({
+    queryKey: ['stats', 'response-time-distribution', windowDays],
+    queryFn: () => fetchResponseTimeDistribution(windowDays),
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+// ─── 카카오 채팅 카테고리 분포 ──────────────────────────────────────────────
+export function useChatCategoryDistribution(windowDays = 90) {
+  return useQuery({
+    queryKey: ['stats', 'chat-category-distribution', windowDays],
+    queryFn: () => fetchChatCategoryDistribution(windowDays),
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+// ─── 카카오 감정 추세 ───────────────────────────────────────────────────────
+export function useSentimentTrend(windowDays = 30) {
+  return useQuery({
+    queryKey: ['stats', 'sentiment-trend', windowDays],
+    queryFn: () => fetchSentimentTrend(windowDays),
     staleTime: 10 * 60 * 1000,
   })
 }

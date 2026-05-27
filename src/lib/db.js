@@ -290,6 +290,55 @@ export async function fetchDashboardStats() {
   }
 }
 
+// ─── 카카오 상담 응답시간 분포 ─────────────────────────────────────────────
+/**
+ * 학부모(user) 메시지 후 직원(manager) 첫 응답까지의 시간 분포.
+ * 윈도우(일) 단위로 6개 버킷에 집계해 반환.
+ * Supabase 미연결 시 null 반환 (그래프 카드가 자동으로 숨겨짐).
+ */
+export async function fetchResponseTimeDistribution(windowDays = 90) {
+  if (!isSupabaseEnabled) return null
+  const { data, error } = await supabase.rpc('get_response_time_distribution', {
+    window_days: windowDays,
+  })
+  if (error) throw error
+  return (data || []).map(row => ({
+    bucket: row.bucket.replace(/^\d+\.\s*/, ''),
+    cnt:    Number(row.cnt),
+    pct:    Number(row.pct),
+  }))
+}
+
+// ─── 카카오 채팅 카테고리 분포 (AI 분류 결과) ───────────────────────────
+export async function fetchChatCategoryDistribution(windowDays = 90) {
+  if (!isSupabaseEnabled) return null
+  const { data, error } = await supabase.rpc('get_chat_category_distribution', {
+    window_days: windowDays,
+  })
+  if (error) throw error
+  return (data || []).map(row => ({
+    category:      row.category,
+    cnt:           Number(row.cnt),
+    pct:           Number(row.pct),
+    negativeRate:  Number(row.negative_rate),
+  }))
+}
+
+// ─── 카카오 감정 추세 (일별) ────────────────────────────────────────────
+export async function fetchSentimentTrend(windowDays = 30) {
+  if (!isSupabaseEnabled) return null
+  const { data, error } = await supabase.rpc('get_sentiment_trend', {
+    window_days: windowDays,
+  })
+  if (error) throw error
+  return (data || []).map(row => ({
+    day:      row.day,
+    positive: Number(row.positive),
+    neutral:  Number(row.neutral),
+    negative: Number(row.negative),
+  }))
+}
+
 // ─── 모듈 트리 (항상 mockData) ───────────────────────────────────────────────
 export function getModuleTree() { return MODULE_TREE }
 

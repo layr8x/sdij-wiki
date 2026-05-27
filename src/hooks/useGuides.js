@@ -13,6 +13,7 @@ import {
   incrementViews,
   fetchDashboardStats,
   fetchModuleStats,
+  fetchResponseTimeDistribution,
 } from '../lib/db'
 
 // ─── 전체 가이드 목록 ─────────────────────────────────────────────────────────
@@ -109,6 +110,15 @@ export function useModuleStats() {
   return useQuery({
     queryKey: ['stats', 'modules'],
     queryFn: fetchModuleStats,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+// ─── 카카오 상담 응답시간 분포 ───────────────────────────────────────────────
+export function useResponseTimeDistribution(windowDays = 90) {
+  return useQuery({
+    queryKey: ['stats', 'response-time-distribution', windowDays],
+    queryFn: () => fetchResponseTimeDistribution(windowDays),
     staleTime: 10 * 60 * 1000,
   })
 }

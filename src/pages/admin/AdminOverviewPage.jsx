@@ -1,6 +1,11 @@
 // src/pages/admin/AdminOverviewPage.jsx — /admin 대시보드
 import { Link } from 'react-router-dom'
-import { useDashboardStats, useModuleStats, useRecentGuides } from '@/hooks/useGuides'
+import {
+  useDashboardStats,
+  useModuleStats,
+  useRecentGuides,
+  useResponseTimeDistribution,
+} from '@/hooks/useGuides'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,10 +31,21 @@ function formatNumber(n) {
   return n.toLocaleString('ko-KR')
 }
 
+// 응답시간 버킷별 색상 (빠를수록 안전, 느릴수록 위험).
+const BUCKET_TONE = {
+  '0-5분':    'bg-emerald-500',
+  '5-30분':   'bg-emerald-400',
+  '30-60분':  'bg-amber-400',
+  '1-3시간':  'bg-amber-500',
+  '3-24시간': 'bg-orange-500',
+  '24시간+':  'bg-red-500',
+}
+
 export default function AdminOverviewPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: moduleStats = {}, isLoading: modsLoading } = useModuleStats()
   const { data: recents = [], isLoading: recentsLoading } = useRecentGuides(8)
+  const { data: rtDist, isLoading: rtLoading } = useResponseTimeDistribution(90)
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 px-6 py-8">
@@ -109,6 +125,47 @@ export default function AdminOverviewPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* 카카오 상담 응답시간 분포 (최근 90일) */}
+        {(rtLoading || (rtDist && rtDist.length > 0)) && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base">카카오 상담 응답시간 분포 (최근 90일)</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                학부모 메시지 후 직원 첫 응답까지 걸린 시간을 6개 구간으로 집계.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {rtLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))
+              ) : (
+                rtDist.map((row) => {
+                  const maxPct = Math.max(...rtDist.map(r => r.pct), 1)
+                  const widthPct = (row.pct / maxPct) * 100
+                  const tone = BUCKET_TONE[row.bucket] || 'bg-primary'
+                  return (
+                    <div key={row.bucket} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{row.bucket}</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatNumber(row.cnt)}건 · {row.pct}%
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full transition-all ${tone}`}
+                          style={{ width: `${widthPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* 최근 업데이트 */}
         <Card>

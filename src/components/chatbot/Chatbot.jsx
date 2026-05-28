@@ -231,10 +231,14 @@ function ContextBanner({ contextLabel }) {
 
 // ─── Capability Box ─────────────────────────────────────────────────────
 function CapabilityBox() {
+  // Figma v1 (CapabilityBox / Default): notification/warning 배경(#FCF4D6) + 좌측 caution 액센트 바
   return (
     <div
       className="rounded-[4px] px-4 py-3.5 text-[13px] leading-[1.5] space-y-3"
-      style={{ backgroundColor: '#ffffff', border: `1px solid ${CHATBOT_BORDER}` }}
+      style={{
+        backgroundColor: CHATBOT_WARN_BG,
+        borderLeft: `3px solid ${CHATBOT_WARN_BAR}`,
+      }}
     >
       <div className="flex gap-2.5">
         <CheckCircle size={20} weight="fill" className="shrink-0 mt-0.5" style={{ color: CHATBOT_SUCCESS }} />
@@ -257,13 +261,14 @@ function CapabilityBox() {
 // ─── Quick Replies ──────────────────────────────────────────────────────
 function QuickReplies({ replies, onClick }) {
   if (!replies?.length) return null
+  // Figma v1 (QR 컴포넌트): 우측 정렬 세로 스택 · rounded-[4px] · 흰 배경 + 미세 그림자 · body-m 15px
   return (
-    <div className="flex flex-wrap gap-1.5 mt-2.5">
+    <div className="flex flex-col items-end gap-2 mt-2.5">
       {replies.map((reply, i) => (
         <button
           key={i}
           onClick={() => onClick(reply)}
-          className="rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-all duration-150"
+          className="rounded-[4px] border px-4 py-2.5 text-[15px] leading-[1.5] text-left max-w-[88%] font-normal transition-all duration-150 shadow-[0px_1px_0.5px_rgba(0,0,0,0.06),0px_2px_1px_rgba(0,0,0,0.04),0px_4px_1px_rgba(0,0,0,0.02)]"
           style={{ backgroundColor: '#ffffff', borderColor: CHATBOT_BORDER, color: CHATBOT_TAG_GRAY }}
           onMouseEnter={e => {
             e.currentTarget.style.backgroundColor = CHATBOT_TAG_BLUE_BG

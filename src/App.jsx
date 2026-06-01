@@ -51,6 +51,7 @@ const AdminGuidesPage      = lazy(() => import('./pages/admin/AdminGuidesPage'))
 const AdminFeedbackPage    = lazy(() => import('./pages/admin/AdminFeedbackPage'))
 const AdminIntegrationPage = lazy(() => import('./pages/admin/AdminIntegrationPage'))
 const AdminConsultsPage    = lazy(() => import('./pages/admin/AdminConsultsPage'))
+const ChatbotPopupPage     = lazy(() => import('./components/chatbot').then(m => ({ default: m.ChatbotPopupPage })))
 
 // React Query 클라이언트
 const queryClient = new QueryClient({
@@ -74,6 +75,11 @@ export default function App() {
                 <SearchProvider>
                   <BrowserRouter>
                   <Routes>
+                    {/* 챗봇 별도 창 (/chatbot) — 레이아웃 없이 창 전체 */}
+                    <Route path="/chatbot" element={
+                      <Suspense fallback={<PageSkeleton />}><ChatbotPopupPage /></Suspense>
+                    } />
+
                     {/* 새 가이드 작성 — 편집 권한 필요, 레이아웃 없이 전체 화면 */}
                     <Route element={<RequireRole permission="edit" />}>
                       <Route path="/create" element={

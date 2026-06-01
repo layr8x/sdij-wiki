@@ -12,7 +12,7 @@ import { useManagerFaq } from '@/hooks/useManagerFaq'
 import { useChatbot, MSG_TYPES } from './useChatbot'
 import { MIcon } from './chatbotIcons'
 import {
-  T, FONT, CHIP_MENU, GREETING, FORM_COPY, ATTACH_LIMIT, SEARCH_PLACEHOLDER, getCategoryLabel,
+  T, FONT, CHIP_MENU, GREETING, FORM_COPY, ATTACH_LIMIT, SEARCH_PLACEHOLDER, getCategoryLabel, guideSearchUrl,
 } from './chatbotConfig'
 
 const BTN = { fontSize: '18px', lineHeight: '32px', fontWeight: 400, ...FONT.ss } // 버튼 라벨(body 18)
@@ -207,7 +207,7 @@ function FaqList({ categoryId, items, onPickQa, onRequestSolution, onOpenGuide }
         <FaqRow key={qa.id} onClick={() => onPickQa(qa)}>{qa.q.replace(/[?？]\s*$/, '')}?</FaqRow>
       ))}
       <FaqRow onClick={onRequestSolution}>해결방법 요청하기</FaqRow>
-      <FaqRow isLink last onClick={() => onOpenGuide('/guides')}>{label} 가이드 보기</FaqRow>
+      <FaqRow isLink last onClick={() => onOpenGuide(guideSearchUrl(label))}>{label} 가이드 보기</FaqRow>
     </div>
   )
 }

@@ -79,6 +79,17 @@ export const CONFIRM = {
 export const SEARCH_PLACEHOLDER = '검색어를 입력해 주세요.'
 export const GUIDE_LINK_LABEL = '관련 가이드 보기'
 
+// ─── 가이드 원본: Confluence AMS 스페이스 (이 스페이스 안에서만 검색/이동) ──
+// "전체/관련 가이드 보기" 링크는 항상 이 Confluence AMS 스페이스 범위에서만
+// 정렬·검색되도록 한다. 주제어가 있으면 스페이스 내부 검색, 없으면 개요 페이지.
+export const CONFLUENCE_AMS_OVERVIEW =
+  'https://hiconsy.atlassian.net/wiki/spaces/AMS/overview?homepageId=2073494129'
+export function guideSearchUrl(query) {
+  const q = (query || '').trim()
+  if (!q) return CONFLUENCE_AMS_OVERVIEW
+  return `https://hiconsy.atlassian.net/wiki/search?text=${encodeURIComponent(q)}&spaces=AMS`
+}
+
 // ─── 폼 카피 (인라인 — 해결방법요청 / 오류신고) ──────────────────────────
 // 검색 무결과 / "해결방법 요청하기" → solution 폼 (앞 말풍선 2개)
 export const SOLUTION_INTRO = {
@@ -92,7 +103,7 @@ export const FORM_COPY = {
   error: {
     userLabel: '오류신고',
     intro: '허위·중복 신고로 인해 정말 필요한 업무 처리가 지연될 수 있어요. 신고 전 가이드를 한 번 더 확인해 주세요.',
-    link: { label: '전체 가이드 보기', url: '/guides' },
+    link: { label: '전체 가이드 보기', url: CONFLUENCE_AMS_OVERVIEW },
     placeholder: FORM_PLACEHOLDER,
   },
 }

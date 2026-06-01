@@ -8,7 +8,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { getRelatedGuidesForQa } from './intents'
 import { getQaByCategory, OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, matchOfficialQa } from '@/data/officialQa'
 import { MANAGER_FAQ, searchManagerFaq, bestManagerFaq, popularManagerFaq } from '@/data/managerFaq'
-import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT } from './chatbotConfig'
+import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT, guideSearchUrl } from './chatbotConfig'
 
 export const MSG_TYPES = {
   GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
@@ -34,7 +34,7 @@ function buildGuideCard(qa) {
     categoryEmoji: cat?.emoji || '📘',
     title: top?.title || `${qa.q.replace(/[?？]\s*$/, '')} 가이드`,
     snippet: lead || qa.tip || '',
-    url: top?.url || null,
+    url: guideSearchUrl(qa.q), // 가이드 원본은 Confluence AMS 스페이스 내부 검색으로 연결
   }
 }
 
@@ -126,7 +126,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     respond(
       [mk('user', { text: item.q })],
       [
-        mk('bot', { answer: item.a, link: { label: GUIDE_LINK_LABEL, url: '/faq' } }),
+        mk('bot', { answer: item.a, link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(item.q) } }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
       ]
@@ -164,11 +164,10 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     if (!query) return
     const hit = matchOfficialQa(query)
     if (hit?.item) {
-      const guide = buildGuideCard(hit.item)
       respond(
         [mk('user', { text: query })],
         [
-          mk('bot', { answer: answerText(hit.item), link: { label: GUIDE_LINK_LABEL, url: guide.url || '/guides' } }),
+          mk('bot', { answer: answerText(hit.item), link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(query) } }),
           mk('bot', { text: CONFIRM.more }),
           mk('chips'),
         ]
@@ -180,7 +179,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       respond(
         [mk('user', { text: query })],
         [
-          mk('bot', { answer: faq.a, link: { label: GUIDE_LINK_LABEL, url: '/faq' } }),
+          mk('bot', { answer: faq.a, link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(query) } }),
           mk('bot', { text: CONFIRM.more }),
           mk('chips'),
         ]

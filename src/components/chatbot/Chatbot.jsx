@@ -3,8 +3,8 @@
 //
 // 대화형 단일 스레드: 봇 인사 + 칩 메뉴 → 칩(카테고리 FAQ)·검색(답변/해결요청).
 // 인라인 폼(텍스트+첨부) + 하단 고정 취소/보내기 바. 평소엔 하단 검색바.
-// 토큰: 배경 #F4F4F4 · 헤더 "AMS 챗봇" · 유저 말풍선 #0043CE · body 20/32 ·
-//       말풍선/입력 4px · 칩 pill(회색 테두리·검정/빨강 텍스트) · 폭 512.
+// 토큰: 배경 #F4F4F4 · 헤더 "AMS 챗봇" · 유저 말풍선 연한파랑 #EDF5FF/글씨 #0043CE
+//       · body 20/32 · 봇 말풍선/입력 4px · 칩 pill · 폼 입력 #EDF5FF 패널 · 폭 512.
 
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'

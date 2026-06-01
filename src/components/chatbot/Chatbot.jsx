@@ -130,8 +130,8 @@ function BotBubble({ text, answer, link, onOpen }) {
 function UserBubble({ text }) {
   return (
     <div className="flex justify-end w-full animate-in fade-in slide-in-from-right-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-      <div className="p-[16px] max-w-[400px]" style={{ backgroundColor: T.brandBlue, borderRadius: R_USER }}>
-        <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.inkOnColor }}>{text}</p>
+      <div className="p-[16px] max-w-[400px] overflow-hidden" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}`, borderRadius: R_USER }}>
+        <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.brandBlue }}>{text}</p>
       </div>
     </div>
   )

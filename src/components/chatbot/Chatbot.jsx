@@ -472,7 +472,7 @@ function ChatbotWidget({ chatbot }) {
 
   const widgetClass = isMobile
     ? 'fixed inset-0 z-40 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300'
-    : 'fixed bottom-24 right-6 z-40 w-[512px] h-[720px] max-h-[calc(100dvh-7rem)] rounded-[16px] overflow-hidden flex flex-col origin-bottom-right animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300'
+    : 'fixed bottom-24 right-6 z-40 w-[512px] h-[960px] max-h-[calc(100dvh-7rem)] rounded-[16px] overflow-hidden flex flex-col origin-bottom-right animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300'
 
   return (
     <div ref={panelRef} role="dialog" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>

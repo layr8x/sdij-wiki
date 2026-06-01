@@ -106,55 +106,16 @@ function WidgetHeader() {
   )
 }
 
-// ─── 답변 구조화 렌더 (번호 단계·헤더·※주의·메뉴 경로) ───────────────────
-function StructuredAnswer({ text }) {
-  const lines = (text || '').split('\n')
-  return (
-    <div className="flex flex-col gap-[3px] w-full">
-      {lines.map((raw, i) => {
-        const line = raw.trim()
-        if (!line) return <div key={i} style={{ height: 6 }} aria-hidden />
-        if (line.startsWith('※')) return <p key={i} className="mt-[6px] break-words [overflow-wrap:anywhere]" style={{ ...FONT.bodyM, color: T.helper }}>{line}</p>
-        if (/^🔗/.test(line)) return <p key={i} className="mt-[6px] break-words [overflow-wrap:anywhere]" style={{ ...FONT.bodyM, color: T.link }}>{line}</p>
-        if (/^\[.+\]$/.test(line)) return <p key={i} className="mt-[8px] break-words" style={{ ...FONT.bodyL, fontWeight: 600, color: T.ink }}>{line.replace(/[[\]]/g, '')}</p>
-        if (line.includes('→') && /AMS|관리|메뉴|납부|청구|결제|회원|강좌|전형|출결|환불|보강|마이클래스/.test(line)) {
-          return (
-            <span key={i} className="my-[4px] inline-flex w-fit max-w-full rounded-[8px] px-[12px] py-[6px] break-words [overflow-wrap:anywhere]" style={{ backgroundColor: T.bg, ...FONT.bodyM, fontWeight: 600, color: T.navy }}>{line}</span>
-          )
-        }
-        const step = line.match(/^([①②③④⑤⑥⑦⑧⑨⑩]|\d+[.)])\s*(.+)$/)
-        if (step) return (
-          <div key={i} className="flex gap-[8px] break-words [overflow-wrap:anywhere]">
-            <span className="shrink-0" style={{ ...FONT.bodyL, fontWeight: 600, color: T.brandBlue }}>{step[1]}</span>
-            <span style={{ ...FONT.bodyL, fontWeight: 600, color: T.ink }}>{step[2]}</span>
-          </div>
-        )
-        return <p key={i} className="break-words [overflow-wrap:anywhere]" style={{ ...FONT.bodyL, color: T.ink }}>{line}</p>
-      })}
-    </div>
-  )
-}
-
-// 자가처리/요청 배지 톤
-const BADGE_TONES = {
-  green: { bg: '#E3F4E9', text: '#0E6027' },
-  red: { bg: '#FFF1F1', text: '#A2191F' },
-  amber: { bg: '#FCF3D4', text: '#7A5C00' },
-}
-
-// ─── 말풍선 (말풍선형 모서리 · 구조화 답변 · 배지 · 가이드 링크) ──────────
-function BotBubble({ text, answer, badge, link, onOpen }) {
-  const tone = badge ? BADGE_TONES[badge.tone] || BADGE_TONES.green : null
+// ─── 봇 말풍선 (말풍선형 모서리 · 본문 Regular 20/32 · 관련 가이드 링크) ──
+// 시안(Figma 871:26431) 그대로: 본문은 전부 Pretendard Regular 20/32 #161616,
+// 줄바꿈은 pre-wrap 으로 보존. 본문과 링크 사이 간격 24px. 링크는 회색 박스
+// (bg #F4F4F4, rounded-16, "관련 가이드 보기" 가운데 + open_in_new 아이콘).
+function BotBubble({ text, answer, link, onOpen }) {
+  const body = answer || text
   return (
     <div className="flex justify-start w-full animate-in fade-in slide-in-from-bottom-3 slide-in-from-left-1 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-      <div className="flex flex-col gap-[16px] p-[16px] max-w-[400px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
-        {badge && (
-          <span className="inline-flex w-fit items-center gap-[6px] rounded-full pl-[10px] pr-[12px] py-[4px]" style={{ backgroundColor: tone.bg, ...FONT.bodyMBold, color: tone.text }}>
-            <span className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: tone.text }} aria-hidden />
-            {badge.label}
-          </span>
-        )}
-        {answer ? <StructuredAnswer text={answer} /> : <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{text}</p>}
+      <div className="flex flex-col gap-[24px] p-[16px] max-w-[400px] overflow-hidden" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
+        <p className="w-full break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{body}</p>
         {link && (
           <button type="button" onClick={() => onOpen?.(link.url)} className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter,transform] duration-150 hover:brightness-[0.97] active:scale-[0.99]" style={{ backgroundColor: T.bg }}>
             <span className="flex-1 text-center" style={{ ...FONT.bodyL, color: T.ink }}>{link.label}</span>
@@ -459,7 +420,7 @@ function ThreadMessage({ m, chatbot }) {
     case MSG_TYPES.TYPING:
       return <TypingIndicator />
     case MSG_TYPES.BOT:
-      return <BotBubble text={m.text} answer={m.answer} badge={m.badge} link={m.link} onOpen={chatbot.openGuide} />
+      return <BotBubble text={m.text} answer={m.answer} link={m.link} onOpen={chatbot.openGuide} />
     case MSG_TYPES.FAQ:
       return (
         <FaqList

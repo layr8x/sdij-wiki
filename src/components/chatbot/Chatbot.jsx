@@ -289,8 +289,8 @@ function InlineForm({ m, chatbot }) {
       />
       {chatbot.formFiles.map((f, i) => <FileChip key={i} name={f.name} onRemove={() => chatbot.removeFile(i)} />)}
       {chatbot.formFiles.length < ATTACH_LIMIT.maxCount && (
-        <button type="button" onClick={() => fileRef.current?.click()} className="w-full flex items-center gap-[4px] px-[20px] py-[8px] rounded-[2px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
-          <span className="flex-1 text-center" style={{ ...BTN, color: T.ink }}>이미지 첨부하기</span>
+        <button type="button" onClick={() => fileRef.current?.click()} className="w-full flex items-center justify-center gap-[8px] pl-[24px] pr-[20px] py-[8px] rounded-[2px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
+          <span style={{ ...BTN, color: T.ink }}>이미지 첨부하기</span>
           <MIcon name="add" size={24} color={T.ink} />
         </button>
       )}
@@ -308,7 +308,7 @@ function FormActionBar({ canSubmit, onCancel, onSubmit }) {
       <button type="button" onClick={onCancel} className="flex items-center justify-center px-[32px] py-[16px] rounded-[32px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
         <span style={{ ...BTN, color: T.ink }}>취소</span>
       </button>
-      <button type="button" onClick={onSubmit} disabled={!canSubmit} className="flex items-center justify-center gap-[4px] pl-[32px] pr-[28px] py-[16px] rounded-[32px] transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed" style={{ backgroundColor: canSubmit ? T.navy : T.disabled }}>
+      <button type="button" onClick={onSubmit} disabled={!canSubmit} className="flex items-center justify-center gap-[4px] pl-[32px] pr-[28px] py-[16px] rounded-[32px] transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed" style={{ backgroundColor: canSubmit ? T.brandBlue : T.disabled }}>
         <span style={{ ...BTN, color: canSubmit ? T.inkOnColor : T.placeholder }}>보내기</span>
         <MIcon name="send" size={28} color={canSubmit ? T.inkOnColor : T.placeholder} />
       </button>
@@ -363,7 +363,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
     <div className="shrink-0 p-[16px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
       <div className="relative">
         {list.length > 0 && (
-          <div className="absolute bottom-full left-0 right-0 mb-2 rounded-[16px] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-200" style={{ backgroundColor: T.white, boxShadow: T.shadowXl, border: `1px solid ${T.border}` }}>
+          <div className="absolute bottom-full left-0 right-0 mb-[8px] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-200" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, boxShadow: '0 -4px 16px rgba(0,0,0,0.06)' }}>
             {!trimmed && <div className="px-[16px] pt-[12px] pb-[4px]" style={{ ...FONT.bodyM, color: T.helper }}>자주 찾는 항목</div>}
             {list.map((qa, i) => (
               <button
@@ -373,7 +373,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(qa)}
                 className="w-full text-left p-[16px] transition-colors"
-                style={{ borderTop: i === 0 ? 'none' : `1px solid ${T.border}`, backgroundColor: active === i ? '#F0F5FF' : T.white, ...FONT.bodyL, color: T.navy }}
+                style={{ borderBottom: i === list.length - 1 ? 'none' : `1px solid ${T.border}`, backgroundColor: active === i ? '#F0F5FF' : T.white, ...FONT.bodyL, color: T.navy }}
               >
                 {highlightMatch(qa.q.replace(/[?？]\s*$/, '') + '?', text)}
               </button>
@@ -382,8 +382,8 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
         )}
         <form
           onSubmit={(e) => { e.preventDefault(); submit() }}
-          className="flex items-center gap-[8px] p-[8px] pl-[16px] rounded-[32px]"
-          style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, transition: 'border-color 150ms' }}
+          className="flex items-center gap-[8px] p-[8px] rounded-[32px]"
+          style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', transition: 'border-color 150ms' }}
         >
           <input
             ref={inputRef}
@@ -395,7 +395,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
             onKeyDown={onKeyDown}
             placeholder={SEARCH_PLACEHOLDER}
             aria-label="FAQ 검색"
-            className="flex-1 min-w-0 bg-transparent border-0 outline-none placeholder:text-[rgba(22,22,22,0.32)]"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none pl-[16px] placeholder:text-[rgba(22,22,22,0.32)]"
             style={{ ...FONT.bodyL, color: T.ink }}
             autoComplete="off"
           />

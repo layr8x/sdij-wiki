@@ -3,10 +3,9 @@ import * as React from "react"
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {
-  // 초기값을 lazy initializer 로 1회 측정 → effect 본문 setState 제거
-  // (react-hooks/set-state-in-effect 준수, 첫 렌더 깜빡임도 방지)
-  const [isMobile, setIsMobile] = React.useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < MOBILE_BREAKPOINT : false
+  // 초기값을 lazy 로 계산 — effect 내 동기 setState 제거 (cascading render 방지)
+  const [isMobile, setIsMobile] = React.useState(
+    () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT
   )
 
   React.useEffect(() => {

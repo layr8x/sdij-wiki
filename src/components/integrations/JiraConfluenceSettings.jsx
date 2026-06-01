@@ -14,10 +14,11 @@ export function JiraConfluenceSettings() {
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState(null)
 
-  // 현재 사용자 및 통합 로드 (선언을 effect 앞으로 — 참조 순서 규칙 준수)
+  // 현재 사용자 및 통합 로드
   const loadData = useCallback(async () => {
     try {
-      setLoading(true)
+      // loading 초기값이 true 라 mount 시점 setLoading(true) 는 불필요
+      // (effect 내 동기 setState 경고 회피).
       const { data: sessionData, error: authError } = await supabase.auth.getSession()
 
       if (authError || !sessionData.session) {
@@ -41,7 +42,8 @@ export function JiraConfluenceSettings() {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 마운트 시 1회 데이터 로드 (내부 setLoading 은 의도된 로딩 표시)
+    // mount 시 1회 비동기 데이터 페치 — setState 는 모두 await 이후 발생.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData()
   }, [loadData])
 

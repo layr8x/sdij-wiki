@@ -1,7 +1,7 @@
 // src/components/integrations/JiraConfluenceSettings.jsx
 // Jira/Confluence OAuth 통합 설정 UI
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,12 +14,8 @@ export function JiraConfluenceSettings() {
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState(null)
 
-  // 현재 사용자 및 통합 로드
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  async function loadData() {
+  // 현재 사용자 및 통합 로드 (선언을 effect 앞으로 — 참조 순서 규칙 준수)
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const { data: sessionData, error: authError } = await supabase.auth.getSession()
@@ -42,7 +38,12 @@ export function JiraConfluenceSettings() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 마운트 시 1회 데이터 로드 (내부 setLoading 은 의도된 로딩 표시)
+    loadData()
+  }, [loadData])
 
   // OAuth 연결 시작
   async function startConnect() {

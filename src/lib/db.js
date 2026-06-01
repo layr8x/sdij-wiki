@@ -264,7 +264,6 @@ export async function fetchDashboardStats() {
   // Supabase 미연결 fallback — 실제 운영 데이터(SSOT) 기반.
   // 출처: 실장님 시트 25 Q&A (officialQa.js) + FVSOL 컨플 130 페이지 + AMS 1 페이지 (confluence-sources.js)
   // 누적 조회수/만족도는 Supabase 연결 후 실측. 현재는 정직하게 0/null.
-  // eslint-disable-next-line no-unused-vars
   const _legacyMockGuides = Object.values(GUIDES)
   // 동적 import 회피 — Vite tree-shaking 위해 모듈 상단 import 사용 권장이나
   // 순환 의존성 회피 위해 require-style 동적 import.

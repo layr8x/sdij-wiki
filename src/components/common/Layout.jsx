@@ -26,7 +26,6 @@ class ChatbotErrorBoundary extends Component {
   static getDerivedStateFromError() { return { hasError: true } }
   componentDidCatch(error, info) {
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.error('[Chatbot] 위젯 마운트 실패 — 본 앱은 영향 없음:', error, info)
     }
   }

@@ -266,7 +266,7 @@ function InlineForm({ m, chatbot }) {
 
   if (m.done) {
     return (
-      <div className="flex flex-col gap-[8px] w-full opacity-90">
+      <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full opacity-90" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
         <div className="w-full rounded-[4px] p-[16px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}` }}>
           <p className="whitespace-pre-wrap break-words" style={{ ...FONT.bodyL, color: T.ink }}>{m.submittedText}</p>
         </div>
@@ -278,7 +278,7 @@ function InlineForm({ m, chatbot }) {
   if (!isActive) return null
 
   return (
-    <div className="flex flex-col gap-[8px] w-full">
+    <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
       <textarea
         ref={textareaRef}
         value={chatbot.formText}
@@ -289,7 +289,7 @@ function InlineForm({ m, chatbot }) {
       />
       {chatbot.formFiles.map((f, i) => <FileChip key={i} name={f.name} onRemove={() => chatbot.removeFile(i)} />)}
       {chatbot.formFiles.length < ATTACH_LIMIT.maxCount && (
-        <button type="button" onClick={() => fileRef.current?.click()} className="w-full flex items-center justify-center gap-[8px] pl-[24px] pr-[20px] py-[8px] rounded-[2px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
+        <button type="button" onClick={() => fileRef.current?.click()} className="w-full flex items-center justify-center gap-[8px] px-[20px] py-[8px] rounded-[2px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
           <span style={{ ...BTN, color: T.ink }}>이미지 첨부하기</span>
           <MIcon name="add" size={24} color={T.ink} />
         </button>

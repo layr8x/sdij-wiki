@@ -15,6 +15,8 @@ import {
 } from './chatbotConfig'
 
 const BTN = { fontSize: '18px', lineHeight: '32px', fontWeight: 400, ...FONT.ss } // 버튼 라벨(body 18)
+const R_BOT = '4px 24px 24px 24px' // 봇 말풍선 — 좌상단 꼬리
+const R_USER = '24px 4px 24px 24px' // 유저 말풍선 — 우상단 꼬리
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
@@ -85,12 +87,18 @@ function WidgetHeader({ onClose }) {
   )
 }
 
-// ─── 말풍선 (rounded-4 · Regular) ────────────────────────────────────────
-function BotBubble({ text }) {
+// ─── 말풍선 (말풍선형 모서리 · Regular · 가이드 링크 내장) ────────────────
+function BotBubble({ text, link, onOpen }) {
   return (
     <div className="flex justify-start w-full">
-      <div className="px-[16px] py-[12px] max-w-[400px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}` }}>
+      <div className="flex flex-col gap-[24px] p-[16px] max-w-[400px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
         <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{text}</p>
+        {link && (
+          <button type="button" onClick={() => onOpen?.(link.url)} className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter] hover:brightness-95" style={{ backgroundColor: T.bg }}>
+            <span className="flex-1 text-center" style={{ ...FONT.bodyL, color: T.ink }}>{link.label}</span>
+            <MIcon name="open_in_new" size={24} color={T.ink} />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -99,7 +107,7 @@ function BotBubble({ text }) {
 function UserBubble({ text }) {
   return (
     <div className="flex justify-end w-full animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <div className="px-[16px] py-[12px] max-w-[400px] rounded-[4px]" style={{ backgroundColor: T.brandBlue }}>
+      <div className="p-[16px] max-w-[400px]" style={{ backgroundColor: T.brandBlue, borderRadius: R_USER }}>
         <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.inkOnColor }}>{text}</p>
       </div>
     </div>
@@ -140,14 +148,13 @@ function FaqRow({ children, onClick, isLink, last }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-[16px] px-[16px] py-[12px] text-left transition-colors hover:bg-[#F7FAFF]"
+      className="w-full flex items-center gap-[16px] p-[16px] text-left transition-colors hover:bg-[#F7FAFF]"
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
-      <span className="flex-1 min-w-0 break-words inline-flex items-center gap-[4px]" style={{ ...FONT.bodyLBold, color: isLink ? T.link : T.navy }}>
+      <span className="flex-1 min-w-0 break-words inline-flex items-center gap-[4px]" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>
         {children}
         {isLink && <MIcon name="open_in_new" size={22} color={T.link} />}
       </span>
-      {!isLink && <MIcon name="chevron_right" size={24} color="rgba(22,22,22,0.3)" />}
     </button>
   )
 }
@@ -185,18 +192,6 @@ function GuideCard({ guide, onOpen }) {
           <span className="underline underline-offset-[3px]" style={{ ...FONT.bodyM, color: T.link }}>전체 가이드 보기</span>
           <MIcon name="open_in_new" size={24} color={T.link} />
         </span>
-      </button>
-    </div>
-  )
-}
-
-// ─── 가이드 링크 (단독 말풍선) ───────────────────────────────────────────
-function GuideLink({ label, url, onOpen }) {
-  return (
-    <div className="flex justify-start w-full">
-      <button type="button" onClick={() => onOpen(url)} className="flex items-center gap-[4px] px-[16px] py-[12px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}` }}>
-        <span style={{ ...FONT.bodyL, color: T.link }}>{label}</span>
-        <MIcon name="open_in_new" size={24} color={T.link} />
       </button>
     </div>
   )
@@ -300,8 +295,8 @@ function SearchBar({ onSearch, suggest, onPickSuggestion }) {
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(qa)}
-                className="w-full text-left px-[16px] py-[12px] transition-colors hover:bg-[#F7FAFF]"
-                style={{ borderTop: i === 0 ? 'none' : `1px solid ${T.border}`, ...FONT.bodyLBold, color: T.navy }}
+                className="w-full text-left p-[16px] transition-colors hover:bg-[#F7FAFF]"
+                style={{ borderTop: i === 0 ? 'none' : `1px solid ${T.border}`, ...FONT.bodyL, color: T.navy }}
               >
                 {qa.q.replace(/[?？]\s*$/, '')}?
               </button>
@@ -310,26 +305,23 @@ function SearchBar({ onSearch, suggest, onPickSuggestion }) {
         )}
         <form
           onSubmit={(e) => { e.preventDefault(); submit() }}
-          className="flex items-center p-[8px] rounded-[8px]"
+          className="flex items-center gap-[8px] p-[8px] pl-[16px] rounded-[32px]"
           style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, transition: 'border-color 150ms' }}
         >
-          <div className="flex-1 flex items-center gap-[2px] pl-[8px] min-w-0">
-            <span className="w-px h-[24px] shrink-0" style={{ backgroundColor: T.ink }} />
-            <input
-              ref={inputRef}
-              value={text}
-              onChange={(e) => { setText(e.target.value); setShowSug(true) }}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder={SEARCH_PLACEHOLDER}
-              aria-label="FAQ 검색"
-              className="flex-1 bg-transparent border-0 outline-none placeholder:text-[rgba(22,22,22,0.32)]"
-              style={{ ...FONT.bodyL, color: T.ink }}
-              autoComplete="off"
-            />
-          </div>
-          <button type="submit" aria-label="검색" className="shrink-0 flex items-center justify-center p-[10px] rounded-[4px] transition-colors hover:bg-[#F4F4F4]">
-            <MIcon name="search" size={28} color={active ? T.ink : 'rgba(22,22,22,0.45)'} />
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => { setText(e.target.value); setShowSug(true) }}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder={SEARCH_PLACEHOLDER}
+            aria-label="FAQ 검색"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none placeholder:text-[rgba(22,22,22,0.32)]"
+            style={{ ...FONT.bodyL, color: T.ink }}
+            autoComplete="off"
+          />
+          <button type="submit" aria-label="검색" className="shrink-0 flex items-center justify-center p-[12px] rounded-full transition-[filter] hover:brightness-110" style={{ backgroundColor: T.brandBlue }}>
+            <MIcon name="search" size={24} color={T.inkOnColor} />
           </button>
         </form>
       </div>
@@ -347,9 +339,7 @@ function ThreadMessage({ m, chatbot }) {
     case MSG_TYPES.USER:
       return <UserBubble text={m.text} />
     case MSG_TYPES.BOT:
-      return <BotBubble text={m.text} />
-    case MSG_TYPES.LINK:
-      return <GuideLink label={m.label} url={m.url} onOpen={chatbot.openGuide} />
+      return <BotBubble text={m.text} link={m.link} onOpen={chatbot.openGuide} />
     case MSG_TYPES.FAQ:
       return (
         <FaqList

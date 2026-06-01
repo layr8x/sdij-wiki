@@ -14,7 +14,7 @@ import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO,
 
 export const MSG_TYPES = {
   GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
-  BOT: 'bot', FAQ: 'faq', GUIDE: 'guide', LINK: 'link', FORM: 'form',
+  BOT: 'bot', FAQ: 'faq', GUIDE: 'guide', FORM: 'form',
 }
 export const CHATBOT_STAGES = { FAQ: 1, RAG: 2, TICKET: 3, NL2SQL: 4 }
 
@@ -84,8 +84,7 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
   const startError = useCallback(() => {
     startForm('error', [
       mk('user', { text: FORM_COPY.error.userLabel }),
-      mk('bot', { text: FORM_COPY.error.intro }),
-      mk('link', { label: FORM_COPY.error.link.label, url: FORM_COPY.error.link.url }),
+      mk('bot', { text: FORM_COPY.error.intro, link: { label: FORM_COPY.error.link.label, url: FORM_COPY.error.link.url } }),
     ])
   }, [startForm])
 
@@ -122,8 +121,7 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
       const guide = buildGuideCard(hit.item)
       append([
         mk('user', { text: query }),
-        mk('bot', { text: answerText(hit.item) }),
-        mk('link', { label: GUIDE_LINK_LABEL, url: guide.url || '/guides' }),
+        mk('bot', { text: answerText(hit.item), link: { label: GUIDE_LINK_LABEL, url: guide.url || '/guides' } }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
       ])

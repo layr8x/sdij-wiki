@@ -39,8 +39,11 @@ function XIcon({ size = 24, color = 'currentColor', stroke = 2 }) {
   )
 }
 
-// ─── FAB ─────────────────────────────────────────────────────────────────
-function ChatbotFAB({ onClick, pulse }) {
+// ─── FAB (런처 — 항상 표시, 클릭으로 팝업 토글) ──────────────────────────
+function ChatbotFAB({ onClick, pulse, open }) {
+  const isMobile = useIsMobile()
+  // 팝업이 열렸을 때 모바일은 헤더 위(우상단)로, 그 외엔 우하단
+  const pos = open && isMobile ? 'top-4 right-4' : 'bottom-6 right-6'
   return (
     <>
       <style>{`
@@ -50,39 +53,37 @@ function ChatbotFAB({ onClick, pulse }) {
       `}</style>
       <button
         type="button"
+        data-ams-fab
         onClick={onClick}
-        aria-label="AMS 챗봇 열기 (⌘+/)"
+        aria-label={open ? 'AMS 챗봇 닫기 (⌘+/)' : 'AMS 챗봇 열기 (⌘+/)'}
+        aria-expanded={open}
         className={cn(
-          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full flex items-center justify-center text-white',
+          'fixed z-[60] h-14 w-14 rounded-full flex items-center justify-center text-white',
           'shadow-lg hover:shadow-xl transition-all duration-200 ease-out hover:scale-105 active:scale-95',
           'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200',
-          pulse && 'ams-fab-pulse'
+          pos,
+          !open && pulse && 'ams-fab-pulse'
         )}
         style={{ backgroundColor: T.navy }}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = T.navyHover)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = T.navy)}
       >
         <MIcon name="forum" size={28} color="#fff" />
-        {pulse && <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full ring-2 ring-white" style={{ backgroundColor: '#DA1E28' }} />}
+        {!open && pulse && <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full ring-2 ring-white" style={{ backgroundColor: '#DA1E28' }} />}
       </button>
     </>
   )
 }
 
-// ─── 헤더 ────────────────────────────────────────────────────────────────
-function WidgetHeader({ onClose }) {
+// ─── 헤더 (타이틀 + BETA — 닫기 X 없음, 팝업이라 바깥 클릭/런처로 닫음) ──
+function WidgetHeader() {
   return (
-    <div className="shrink-0 flex items-center gap-[16px] px-[24px] py-[16px]" style={{ backgroundColor: T.navy }}>
-      <div className="flex-1 flex items-center gap-[8px] min-w-0">
-        <span className="whitespace-nowrap" style={{ fontSize: '20px', lineHeight: '32px', color: T.inkOnColor, ...FONT.ss }}>
-          <b style={{ fontWeight: 600 }}>AMS</b>
-          <span style={{ fontWeight: 400 }}> 챗봇</span>
-        </span>
-        <span className="whitespace-nowrap" style={{ ...FONT.bodyM, color: T.tealBorder }}>BETA</span>
-      </div>
-      <button type="button" onClick={onClose} aria-label="닫기 (Esc)" className="shrink-0 opacity-70 hover:opacity-100 transition-opacity" style={{ color: T.inkOnColor }}>
-        <XIcon size={22} />
-      </button>
+    <div className="shrink-0 flex items-center gap-[8px] px-[24px] py-[16px]" style={{ backgroundColor: T.navy }}>
+      <span className="whitespace-nowrap" style={{ fontSize: '20px', lineHeight: '32px', color: T.inkOnColor, ...FONT.ss }}>
+        <b style={{ fontWeight: 600 }}>AMS</b>
+        <span style={{ fontWeight: 400 }}> 챗봇</span>
+      </span>
+      <span className="whitespace-nowrap" style={{ ...FONT.bodyM, color: T.tealBorder }}>BETA</span>
     </div>
   )
 }
@@ -359,22 +360,40 @@ function ThreadMessage({ m, chatbot }) {
   }
 }
 
-// ─── 위젯 ────────────────────────────────────────────────────────────────
+// ─── 위젯 (팝업 — 모달 아님 · 바깥 클릭/런처/Esc 로 닫힘) ─────────────────
 function ChatbotWidget({ chatbot }) {
   const isMobile = useIsMobile()
   const bodyRef = useRef(null)
+  const panelRef = useRef(null)
+  const { close } = chatbot
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
   }, [chatbot.messages, chatbot.activeForm])
 
+  // 팝업: 바깥(런처 제외) 클릭 시 닫기
+  useEffect(() => {
+    const onDown = (e) => {
+      const t = e.target
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(t) &&
+        !(t instanceof Element && t.closest('[data-ams-fab]'))
+      ) {
+        close()
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [close])
+
   const widgetClass = isMobile
-    ? 'fixed inset-0 z-50 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300'
-    : 'fixed bottom-4 right-4 z-50 w-[512px] h-[840px] max-h-[calc(100dvh-2rem)] rounded-[16px] overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300'
+    ? 'fixed inset-0 z-40 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300'
+    : 'fixed bottom-24 right-6 z-40 w-[512px] h-[720px] max-h-[calc(100dvh-7rem)] rounded-[16px] overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300'
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>
-      <WidgetHeader onClose={chatbot.close} />
+    <div ref={panelRef} role="dialog" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>
+      <WidgetHeader />
       <div ref={bodyRef} className="flex-1 overflow-y-auto flex flex-col gap-[24px] p-[24px]" style={{ backgroundColor: T.bg }}>
         {chatbot.messages.map((m) => (
           <ThreadMessage key={m.id} m={m} chatbot={chatbot} />
@@ -400,7 +419,7 @@ export function Chatbot({ userName = '명준', onOpenGuide }) {
 
   return (
     <>
-      {!chatbot.isOpen && <ChatbotFAB onClick={chatbot.open} pulse={chatbot.isFirstVisit} />}
+      <ChatbotFAB onClick={chatbot.toggle} pulse={chatbot.isFirstVisit} open={chatbot.isOpen} />
       {chatbot.isOpen && <ChatbotWidget chatbot={chatbot} />}
     </>
   )

@@ -241,16 +241,23 @@ function GuideCard({ guide, onOpen }) {
   )
 }
 
-// ─── 첨부 파일 칩 (시안 871:26336 — 흰 배경·테두리·rounded-4·삭제 아이콘 28) ─
+// ─── 첨부 파일 칩 (편집: 흰·테두리·X / 접수완료: 회색·흐린글씨·아이콘없음) ──
 function FileChip({ name, onRemove }) {
+  if (!onRemove) {
+    // 접수완료(읽기전용) — 시안 871:26396: 회색 #E8E8E8 · 흐린 글씨 · 아이콘 없음
+    return (
+      <div className="w-full flex items-center px-[16px] py-[8px] rounded-[4px]" style={{ backgroundColor: T.surfaceHover }}>
+        <span className="flex-1 min-w-0 truncate" style={{ ...BTN, color: T.inkSecondary }}>{name}</span>
+      </div>
+    )
+  }
+  // 편집 — 시안 871:26336: 흰 배경 · border/secondary · rounded-4 · 삭제 X(28)
   return (
     <div className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
       <span className="flex-1 min-w-0 truncate" style={{ ...BTN, color: T.ink }}>{name}</span>
-      {onRemove && (
-        <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0" style={{ color: T.ink }}>
-          <XIcon size={28} stroke={2} />
-        </button>
-      )}
+      <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0" style={{ color: T.ink }}>
+        <XIcon size={28} stroke={2} />
+      </button>
     </div>
   )
 }
@@ -265,13 +272,13 @@ function InlineForm({ m, chatbot }) {
   const helper = <p style={{ ...FONT.bodyM, color: T.helper }}>이미지만 첨부 가능 / 최대 2개 / 각 1MB 이하</p>
 
   if (m.done) {
+    // 접수완료(읽기전용) — 시안 871:26366: 회색 텍스트박스(160·흐린글씨) + 회색 첨부칩, 안내문구 없음
     return (
-      <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full opacity-90" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
-        <div className="w-full rounded-[4px] p-[16px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}` }}>
-          <p className="whitespace-pre-wrap break-words" style={{ ...FONT.bodyL, color: T.ink }}>{m.submittedText}</p>
+      <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
+        <div className="w-full rounded-[4px] p-[16px] overflow-hidden" style={{ minHeight: 160, backgroundColor: T.bg, border: `1px solid ${T.border}` }}>
+          <p className="whitespace-pre-wrap break-words" style={{ ...FONT.bodyL, color: T.inkSecondary }}>{m.submittedText}</p>
         </div>
         {(m.submittedFiles || []).map((name, i) => <FileChip key={i} name={name} />)}
-        {helper}
       </div>
     )
   }

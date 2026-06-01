@@ -17,6 +17,7 @@ export const T = {
   surfaceHover: '#E8E8E8', // background/secondary-hover — 첨부 파일 칩
   ink: '#161616', // text/primary
   inkOnColor: '#F4F4F4', // text/on-color
+  inkSecondary: 'rgba(22,22,22,0.72)', // text/secondary — 읽기전용(접수완료) 텍스트
   helper: 'rgba(22,22,22,0.56)', // text/helper
   placeholder: 'rgba(22,22,22,0.32)', // text/placeholder
   border: 'rgba(22,22,22,0.08)', // border/primary

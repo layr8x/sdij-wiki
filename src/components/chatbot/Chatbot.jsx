@@ -356,27 +356,39 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
     else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); pick(list[active]) }
   }
 
+  // 추천검색 + 입력을 하나의 흰 패널로 (시안 IMG_4105: 검색 시 패널이 위로 자라며
+  // 상단 라운드 + 추천 항목이 입력창 위에 같은 패널로 표시)
+  const showList = list.length > 0
   return (
-    <div className="shrink-0 p-[16px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
-      <div className="relative">
-        {list.length > 0 && (
-          <div className="absolute bottom-full left-0 right-0 mb-[8px] overflow-hidden rounded-[8px] animate-in fade-in slide-in-from-bottom-1 duration-200" style={{ backgroundColor: T.white, border: `1px solid ${T.border}` }}>
-            {!trimmed && <div className="px-[16px] pt-[12px] pb-[4px]" style={{ ...FONT.bodyM, color: T.helper }}>자주 찾는 항목</div>}
-            {list.map((qa, i) => (
-              <button
-                key={qa.id}
-                type="button"
-                onMouseEnter={() => setActive(i)}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pick(qa)}
-                className="w-full text-left p-[16px] transition-colors duration-150"
-                style={{ borderBottom: i === list.length - 1 ? 'none' : `1px solid ${T.border}`, backgroundColor: active === i ? '#F7FAFF' : T.white, ...FONT.bodyL, color: T.navy }}
-              >
-                {highlightMatch(qa.q.replace(/[?？]\s*$/, '') + '?', text)}
-              </button>
-            ))}
-          </div>
-        )}
+    <div
+      className="shrink-0 overflow-hidden"
+      style={{
+        backgroundColor: T.white,
+        borderTop: showList ? 'none' : `1px solid ${T.border}`,
+        borderTopLeftRadius: showList ? 16 : 0,
+        borderTopRightRadius: showList ? 16 : 0,
+        boxShadow: showList ? '0 -8px 28px rgba(0,0,0,0.08)' : 'none',
+      }}
+    >
+      {showList && (
+        <div className="max-h-[55vh] overflow-y-auto animate-in fade-in duration-200">
+          {!trimmed && <div className="px-[16px] pt-[12px] pb-[4px]" style={{ ...FONT.bodyM, color: T.helper }}>자주 찾는 항목</div>}
+          {list.map((qa, i) => (
+            <button
+              key={qa.id}
+              type="button"
+              onMouseEnter={() => setActive(i)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(qa)}
+              className="w-full text-left p-[16px] transition-colors duration-150"
+              style={{ borderBottom: `1px solid ${T.border}`, backgroundColor: active === i ? '#F7FAFF' : T.white, ...FONT.bodyL, color: T.navy }}
+            >
+              {highlightMatch(qa.q.replace(/[?？]\s*$/, '') + '?', text)}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="p-[16px]">
         <form
           onSubmit={(e) => { e.preventDefault(); submit() }}
           className="flex items-center gap-[8px] p-[8px] rounded-[32px]"

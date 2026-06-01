@@ -5,7 +5,7 @@
 // 인터랙션: 봇 응답 전 타이핑 인디케이터(대화감) · reduced-motion 존중.
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { getRelatedGuidesForQa } from './intents'
+import { getRelatedGuidesForQa, decideResponseMode } from './intents'
 import { getQaByCategory, OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, matchOfficialQa } from '@/data/officialQa'
 import { MANAGER_FAQ, searchManagerFaq, bestManagerFaq, popularManagerFaq } from '@/data/managerFaq'
 import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT } from './chatbotConfig'
@@ -36,6 +36,14 @@ function buildGuideCard(qa) {
     snippet: lead || qa.tip || '',
     url: top?.url || null,
   }
+}
+
+// 자가처리 가능/플서실 요청 배지 (실장님 시트 selfSolve 기반 — 실무 액션 가이드)
+function modeBadge(qa) {
+  const mode = decideResponseMode(qa)
+  if (mode === 'escalate') return { label: '플랫폼서비스실 요청 필요', tone: 'red' }
+  if (mode === 'partial') return { label: '일부 직접 처리 가능', tone: 'amber' }
+  return { label: '직접 처리 가능', tone: 'green' }
 }
 
 const ONBOARDED_KEY = 'ams-wiki-chatbot-onboarded-v1'
@@ -113,7 +121,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     respond(
       [mk('user', { text: qa.q })],
       [
-        mk('bot', { text: answerText(qa) }),
+        mk('bot', { answer: answerText(qa), badge: modeBadge(qa) }),
         mk('guide', { guide: buildGuideCard(qa) }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
@@ -126,7 +134,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     respond(
       [mk('user', { text: item.q })],
       [
-        mk('bot', { text: item.a, link: { label: GUIDE_LINK_LABEL, url: '/faq' } }),
+        mk('bot', { answer: item.a, link: { label: GUIDE_LINK_LABEL, url: '/faq' } }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
       ]
@@ -168,7 +176,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       respond(
         [mk('user', { text: query })],
         [
-          mk('bot', { text: answerText(hit.item), link: { label: GUIDE_LINK_LABEL, url: guide.url || '/guides' } }),
+          mk('bot', { answer: answerText(hit.item), badge: modeBadge(hit.item), link: { label: GUIDE_LINK_LABEL, url: guide.url || '/guides' } }),
           mk('bot', { text: CONFIRM.more }),
           mk('chips'),
         ]
@@ -180,7 +188,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       respond(
         [mk('user', { text: query })],
         [
-          mk('bot', { text: faq.a, link: { label: GUIDE_LINK_LABEL, url: '/faq' } }),
+          mk('bot', { answer: faq.a, link: { label: GUIDE_LINK_LABEL, url: '/faq' } }),
           mk('bot', { text: CONFIRM.more }),
           mk('chips'),
         ]

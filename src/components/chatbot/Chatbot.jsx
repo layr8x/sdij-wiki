@@ -106,14 +106,57 @@ function WidgetHeader() {
   )
 }
 
-// ─── 말풍선 (말풍선형 모서리 · Regular · 가이드 링크 내장) ────────────────
-function BotBubble({ text, link, onOpen }) {
+// ─── 답변 구조화 렌더 (번호 단계·헤더·※주의·메뉴 경로) ───────────────────
+function StructuredAnswer({ text }) {
+  const lines = (text || '').split('\n')
   return (
-    <div className="flex justify-start w-full animate-in fade-in slide-in-from-bottom-2 slide-in-from-left-1 duration-300">
-      <div className="flex flex-col gap-[24px] p-[16px] max-w-[400px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
-        <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{text}</p>
+    <div className="flex flex-col gap-[3px] w-full">
+      {lines.map((raw, i) => {
+        const line = raw.trim()
+        if (!line) return <div key={i} style={{ height: 6 }} aria-hidden />
+        if (line.startsWith('※')) return <p key={i} className="mt-[6px] break-words [overflow-wrap:anywhere]" style={{ ...FONT.bodyM, color: T.helper }}>{line}</p>
+        if (/^🔗/.test(line)) return <p key={i} className="mt-[6px] break-words [overflow-wrap:anywhere]" style={{ ...FONT.bodyM, color: T.link }}>{line}</p>
+        if (/^\[.+\]$/.test(line)) return <p key={i} className="mt-[8px] break-words" style={{ ...FONT.bodyL, fontWeight: 600, color: T.ink }}>{line.replace(/[[\]]/g, '')}</p>
+        if (line.includes('→') && /AMS|관리|메뉴|납부|청구|결제|회원|강좌|전형|출결|환불|보강|마이클래스/.test(line)) {
+          return (
+            <span key={i} className="my-[4px] inline-flex w-fit max-w-full rounded-[8px] px-[12px] py-[6px] break-words [overflow-wrap:anywhere]" style={{ backgroundColor: T.bg, ...FONT.bodyM, fontWeight: 600, color: T.navy }}>{line}</span>
+          )
+        }
+        const step = line.match(/^([①②③④⑤⑥⑦⑧⑨⑩]|\d+[.)])\s*(.+)$/)
+        if (step) return (
+          <div key={i} className="flex gap-[8px] break-words [overflow-wrap:anywhere]">
+            <span className="shrink-0" style={{ ...FONT.bodyL, fontWeight: 600, color: T.brandBlue }}>{step[1]}</span>
+            <span style={{ ...FONT.bodyL, fontWeight: 600, color: T.ink }}>{step[2]}</span>
+          </div>
+        )
+        return <p key={i} className="break-words [overflow-wrap:anywhere]" style={{ ...FONT.bodyL, color: T.ink }}>{line}</p>
+      })}
+    </div>
+  )
+}
+
+// 자가처리/요청 배지 톤
+const BADGE_TONES = {
+  green: { bg: '#E3F4E9', text: '#0E6027' },
+  red: { bg: '#FFF1F1', text: '#A2191F' },
+  amber: { bg: '#FCF3D4', text: '#7A5C00' },
+}
+
+// ─── 말풍선 (말풍선형 모서리 · 구조화 답변 · 배지 · 가이드 링크) ──────────
+function BotBubble({ text, answer, badge, link, onOpen }) {
+  const tone = badge ? BADGE_TONES[badge.tone] || BADGE_TONES.green : null
+  return (
+    <div className="flex justify-start w-full animate-in fade-in slide-in-from-bottom-3 slide-in-from-left-1 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+      <div className="flex flex-col gap-[16px] p-[16px] max-w-[400px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
+        {badge && (
+          <span className="inline-flex w-fit items-center gap-[6px] rounded-full pl-[10px] pr-[12px] py-[4px]" style={{ backgroundColor: tone.bg, ...FONT.bodyMBold, color: tone.text }}>
+            <span className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: tone.text }} aria-hidden />
+            {badge.label}
+          </span>
+        )}
+        {answer ? <StructuredAnswer text={answer} /> : <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{text}</p>}
         {link && (
-          <button type="button" onClick={() => onOpen?.(link.url)} className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter] hover:brightness-95" style={{ backgroundColor: T.bg }}>
+          <button type="button" onClick={() => onOpen?.(link.url)} className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter,transform] duration-150 hover:brightness-[0.97] active:scale-[0.99]" style={{ backgroundColor: T.bg }}>
             <span className="flex-1 text-center" style={{ ...FONT.bodyL, color: T.ink }}>{link.label}</span>
             <MIcon name="open_in_new" size={24} color={T.ink} />
           </button>
@@ -125,7 +168,7 @@ function BotBubble({ text, link, onOpen }) {
 
 function UserBubble({ text }) {
   return (
-    <div className="flex justify-end w-full animate-in fade-in slide-in-from-right-2 duration-300">
+    <div className="flex justify-end w-full animate-in fade-in slide-in-from-right-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
       <div className="p-[16px] max-w-[400px]" style={{ backgroundColor: T.brandBlue, borderRadius: R_USER }}>
         <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.inkOnColor }}>{text}</p>
       </div>
@@ -184,7 +227,7 @@ function FaqRow({ children, onClick, isLink, last }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-[16px] p-[16px] text-left transition-colors hover:bg-[#F7FAFF]"
+      className="w-full flex items-center gap-[16px] p-[16px] text-left transition-colors duration-150 hover:bg-[#F7FAFF] active:bg-[#EDF5FF]"
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
       <span className="flex-1 min-w-0 break-words inline-flex items-center gap-[4px]" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>
@@ -198,7 +241,7 @@ function FaqRow({ children, onClick, isLink, last }) {
 function FaqList({ categoryId, items, onPickQa, onRequestSolution, onOpenGuide }) {
   const label = getCategoryLabel(categoryId)
   return (
-    <div className="rounded-[16px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ boxShadow: T.shadowS }}>
+    <div className="rounded-[16px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ boxShadow: T.shadowS }}>
       {items.map((qa) => (
         <FaqRow key={qa.id} onClick={() => onPickQa(qa)}>{qa.q.replace(/[?？]\s*$/, '')}?</FaqRow>
       ))}
@@ -212,14 +255,14 @@ function FaqList({ categoryId, items, onPickQa, onRequestSolution, onOpenGuide }
 function GuideCard({ guide, onOpen }) {
   const [hover, setHover] = useState(false)
   return (
-    <div className="flex justify-start w-full animate-in fade-in zoom-in-95 slide-in-from-bottom-1 duration-300">
+    <div className="flex justify-start w-full animate-in fade-in zoom-in-95 slide-in-from-bottom-1 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
       <button
         type="button"
         onClick={() => onOpen?.(guide)}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
-        className="flex flex-col gap-[16px] p-[16px] max-w-[360px] w-full text-left rounded-[4px] transition-shadow"
-        style={{ backgroundColor: T.white, border: `1px solid ${hover ? T.noticeBorder : T.border}` }}
+        className="flex flex-col gap-[16px] p-[16px] max-w-[360px] w-full text-left rounded-[4px] transition-all duration-200 active:scale-[0.99]"
+        style={{ backgroundColor: T.white, border: `1px solid ${hover ? T.noticeBorder : T.border}`, transform: hover ? 'translateY(-2px)' : 'none', boxShadow: hover ? '0 8px 22px rgba(0,67,206,0.10)' : 'none' }}
       >
         <p style={{ ...FONT.bodyMBold, color: T.brandBlue }}>📘 {guide.categoryLabel}</p>
         <div className="flex flex-col gap-[8px] w-full">
@@ -416,7 +459,7 @@ function ThreadMessage({ m, chatbot }) {
     case MSG_TYPES.TYPING:
       return <TypingIndicator />
     case MSG_TYPES.BOT:
-      return <BotBubble text={m.text} link={m.link} onOpen={chatbot.openGuide} />
+      return <BotBubble text={m.text} answer={m.answer} badge={m.badge} link={m.link} onOpen={chatbot.openGuide} />
     case MSG_TYPES.FAQ:
       return (
         <FaqList
@@ -473,7 +516,7 @@ function ChatbotWidget({ chatbot }) {
   return (
     <div ref={panelRef} role="dialog" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>
       <WidgetHeader />
-      <div ref={bodyRef} className="flex-1 overflow-y-auto flex flex-col gap-[24px] px-[16px] py-[24px]" style={{ backgroundColor: T.bg }}>
+      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col gap-[24px] px-[16px] py-[24px]" style={{ backgroundColor: T.bg }}>
         {chatbot.messages.map((m) => (
           <ThreadMessage key={m.id} m={m} chatbot={chatbot} />
         ))}

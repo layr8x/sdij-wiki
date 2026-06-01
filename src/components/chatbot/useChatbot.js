@@ -1,24 +1,19 @@
 // src/components/chatbot/useChatbot.js
-// AMS 운영도우미 챗봇 — 대화형 단일 스레드 상태머신 (Figma v4-260601 "업데이트")
+// AMS 운영도우미 챗봇 — 대화형 단일 스레드 상태머신 (Figma v4 업데이트 830:5936)
 //
-// v4 모델: 화면 분리(view) 없이 메시지 스레드 하나. 칩 메뉴 → FAQ 목록 →
-//          (답변 | 인라인 폼) → 접수확인 + 칩 재노출. 하단 입력바 없음.
+// 흐름: 봇 인사 + 칩 메뉴 → (칩 → FAQ 목록 → 답변) | (검색 → 답변/해결요청)
+//       → 인라인 폼(텍스트+첨부, 하단 고정 취소/보내기) → 접수확인 + 칩.
 //
-// 메시지 타입:
-//   notice   공지 카드(상단)         greeting  봇 인사 말풍선
-//   chips    칩 메뉴(카테고리5+오류)  user      사용자 말풍선
-//   bot      봇 말풍선(text)          faq       카테고리 FAQ 목록
-//   guide    가이드 카드             link      "전체 가이드 보기" 링크
-//   form     인라인 폼(문의/오류)
+// 폼은 본문에 인라인으로, 취소/보내기는 하단 고정바로 분리(시안). 폼 내용
+// (text/files)은 훅이 보관해 인라인 입력부와 고정 버튼이 공유한다.
 
 import { useState, useCallback, useEffect } from 'react'
 import { getRelatedGuidesForQa } from './intents'
 import { getQaByCategory, OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, matchOfficialQa } from '@/data/officialQa'
-import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, NO_RESULT } from './chatbotConfig'
+import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT } from './chatbotConfig'
 
-// 외부 호환 export (index.js barrel)
 export const MSG_TYPES = {
-  NOTICE: 'notice', GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
+  GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
   BOT: 'bot', FAQ: 'faq', GUIDE: 'guide', LINK: 'link', FORM: 'form',
 }
 export const CHATBOT_STAGES = { FAQ: 1, RAG: 2, TICKET: 3, NL2SQL: 4 }
@@ -27,12 +22,8 @@ let _id = 1
 const nextId = () => _id++
 const mk = (type, props = {}) => ({ id: nextId(), type, ...props })
 
-// QA 답변 본문(① ② ※ 등 줄바꿈 텍스트) → 봇 말풍선 표시용 평문
-function answerText(qa) {
-  return (qa.a || '').replace(/\n{3,}/g, '\n\n').trim()
-}
+const answerText = (qa) => (qa.a || '').replace(/\n{3,}/g, '\n\n').trim()
 
-// QA → 가이드 카드
 function buildGuideCard(qa) {
   const cat = OFFICIAL_QA_CATEGORIES.find((c) => c.id === qa.category)
   const related = getRelatedGuidesForQa(qa)
@@ -53,22 +44,22 @@ const initialThread = () => [mk('greeting'), mk('chips')]
 export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState(initialThread)
-  const [doneForms, setDoneForms] = useState(() => new Set())
+  // 활성 폼 + 입력 내용(인라인 입력부 ↔ 하단 고정 버튼 공유)
+  const [activeForm, setActiveForm] = useState(null) // { id, kind } | null
+  const [formText, setFormText] = useState('')
+  const [formFiles, setFormFiles] = useState([])
+  const [fileError, setFileError] = useState('')
 
-  const append = useCallback((items) => {
-    setMessages((prev) => [...prev, ...items])
-  }, [])
+  const append = useCallback((items) => setMessages((prev) => [...prev, ...items]), [])
 
   // ─── 열기/닫기 ──────────────────────────────────────────────────────────
   const open = useCallback(() => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
   const toggle = useCallback(() => setIsOpen((o) => !o), [])
-  const reset = useCallback(() => {
-    setDoneForms(new Set())
-    setMessages(initialThread())
-  }, [])
+  const clearForm = useCallback(() => { setActiveForm(null); setFormText(''); setFormFiles([]); setFileError('') }, [])
+  const reset = useCallback(() => { clearForm(); setMessages(initialThread()) }, [clearForm])
 
-  // ─── 칩 클릭 ────────────────────────────────────────────────────────────
+  // ─── 칩 → 카테고리 FAQ ──────────────────────────────────────────────────
   const openCategory = useCallback((catId, label) => {
     const name = label || getCategoryLabel(catId)
     append([
@@ -78,23 +69,32 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
     ])
   }, [append])
 
-  const startForm = useCallback((kind, copy) => {
-    const items = [mk('user', { text: copy.userLabel })]
-    if (copy.intro) items.push(mk('bot', { text: copy.intro }))
-    if (copy.link) items.push(mk('link', { label: copy.link.label, url: copy.link.url }))
-    items.push(mk('form', { kind }))
-    append(items)
-  }, [append])
+  // ─── 인라인 폼 시작 ─────────────────────────────────────────────────────
+  const startForm = useCallback((kind, bubbles) => {
+    const id = nextId()
+    setMessages((prev) => [...prev, ...bubbles, { id, type: 'form', kind }])
+    setActiveForm({ id, kind })
+    setFormText(''); setFormFiles([]); setFileError('')
+  }, [])
 
-  const startError = useCallback(() => startForm('error', FORM_COPY.error), [startForm])
-  const requestSolution = useCallback(() => startForm('inquiry', FORM_COPY.inquiry), [startForm])
+  const requestSolution = useCallback(() => {
+    startForm('solution', [mk('user', { text: SOLUTION_INTRO.user }), mk('bot', { text: SOLUTION_INTRO.bot })])
+  }, [startForm])
+
+  const startError = useCallback(() => {
+    startForm('error', [
+      mk('user', { text: FORM_COPY.error.userLabel }),
+      mk('bot', { text: FORM_COPY.error.intro }),
+      mk('link', { label: FORM_COPY.error.link.label, url: FORM_COPY.error.link.url }),
+    ])
+  }, [startForm])
 
   const pickChip = useCallback((chip) => {
     if (chip.id === 'error') startError()
     else openCategory(chip.id, chip.label)
   }, [startError, openCategory])
 
-  // ─── FAQ 행 클릭 → 답변 + 가이드 카드 + 후속 칩 ─────────────────────────
+  // ─── FAQ 행 → 답변 + 가이드 + 후속 칩 ───────────────────────────────────
   const pickQa = useCallback((qa) => {
     append([
       mk('user', { text: qa.q }),
@@ -105,7 +105,7 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
     ])
   }, [append])
 
-  // ─── 하단 검색 (자유 입력) + 자동완성 ───────────────────────────────────
+  // ─── 하단 검색 + 자동완성 ───────────────────────────────────────────────
   const faqSuggestions = useCallback((q, limit = 5) => {
     const nq = (q || '').trim().toLowerCase()
     if (nq.length < 1) return []
@@ -128,12 +128,13 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
         mk('chips'),
       ])
     } else {
-      append([mk('user', { text: query }), mk('bot', { text: NO_RESULT }), mk('chips')])
+      // 무결과 → 해결방법요청 폼
+      requestSolution()
     }
-  }, [append])
+  }, [append, requestSolution])
 
+  // ─── 가이드 열기 ────────────────────────────────────────────────────────
   const openGuide = useCallback((arg) => {
-    // 가이드 카드/링크 → 라우터 이동 또는 새 탭
     const url = typeof arg === 'string' ? arg : arg?.url
     if (url) {
       if (/^https?:\/\//.test(url)) window.open(url, '_blank', 'noopener')
@@ -141,20 +142,45 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
     } else onOpenGuide?.(arg)
   }, [onOpenGuide])
 
-  // ─── 폼 제출/취소 ───────────────────────────────────────────────────────
-  const finishForm = useCallback((id) => {
-    setDoneForms((prev) => new Set(prev).add(id))
+  // ─── 폼 입력(첨부) ──────────────────────────────────────────────────────
+  const addFiles = useCallback((list) => {
+    setFileError('')
+    setFormFiles((prev) => {
+      const next = [...prev]
+      for (const f of Array.from(list)) {
+        if (next.length >= ATTACH_LIMIT.maxCount) { setFileError(`이미지는 최대 ${ATTACH_LIMIT.maxCount}개까지 첨부할 수 있어요.`); break }
+        if (!f.type.startsWith('image/')) { setFileError('이미지 파일만 첨부할 수 있어요.'); continue }
+        if (f.size > ATTACH_LIMIT.maxBytes) { setFileError('각 이미지는 1MB 이하만 첨부할 수 있어요.'); continue }
+        next.push(f)
+      }
+      return next.slice(0, ATTACH_LIMIT.maxCount)
+    })
   }, [])
-  const submitForm = useCallback((id) => {
-    finishForm(id)
-    append([mk('bot', { text: CONFIRM.done }), mk('bot', { text: CONFIRM.more }), mk('chips')])
-  }, [finishForm, append])
-  const cancelForm = useCallback((id) => {
-    finishForm(id)
-    append([mk('chips')])
-  }, [finishForm, append])
+  const removeFile = useCallback((idx) => setFormFiles((prev) => prev.filter((_, i) => i !== idx)), [])
 
-  // ─── 단축키 (⌘/Ctrl + / 토글, Esc 닫기) ────────────────────────────────
+  // ─── 폼 제출/취소 ───────────────────────────────────────────────────────
+  const submitForm = useCallback(() => {
+    if (!activeForm || !formText.trim()) return
+    const id = activeForm.id
+    const submittedText = formText
+    const submittedFiles = formFiles.map((f) => f.name)
+    setMessages((prev) => [
+      ...prev.map((m) => (m.id === id ? { ...m, done: true, submittedText, submittedFiles } : m)),
+      mk('bot', { text: CONFIRM.done }),
+      mk('bot', { text: CONFIRM.more }),
+      mk('chips'),
+    ])
+    clearForm()
+  }, [activeForm, formText, formFiles, clearForm])
+
+  const cancelForm = useCallback(() => {
+    if (!activeForm) return
+    const id = activeForm.id
+    setMessages((prev) => prev.filter((m) => m.id !== id))
+    clearForm()
+  }, [activeForm, clearForm])
+
+  // ─── 단축키 ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); toggle() }
@@ -175,11 +201,12 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
   return {
     isOpen, messages, userName, isFirstVisit,
     getQaByCategory,
-    isFormDone: (id) => doneForms.has(id),
+    // 폼 공유 상태
+    activeForm, formText, setFormText, formFiles, fileError, addFiles, removeFile,
+    canSubmit: !!activeForm && !!formText.trim(),
     open, close, toggle, reset,
     pickChip, openCategory, pickQa, requestSolution, startError, openGuide,
-    search, faqSuggestions,
-    submitForm, cancelForm, markVisited,
+    search, faqSuggestions, submitForm, cancelForm, markVisited,
   }
 }
 

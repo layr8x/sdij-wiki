@@ -20,8 +20,9 @@ export const T = {
   helper: 'rgba(22,22,22,0.56)', // text/helper
   placeholder: 'rgba(22,22,22,0.32)', // text/placeholder
   border: 'rgba(22,22,22,0.08)', // border/primary
-  borderStrong: 'rgba(22,22,22,0.24)', // border/secondary — 취소 버튼
+  borderStrong: 'rgba(22,22,22,0.24)', // border/secondary — 취소 버튼 · 칩 테두리
   disabled: 'rgba(22,22,22,0.08)', // button/disabled
+  error: '#DA1E28', // text/error — 오류신고 칩
   link: '#003CE0', // link/enabled
   noticeBg: '#EDF5FF', // tag/blue/background — 공지 카드
   noticeBorder: '#D0E2FF', // tag/blue/border — 공지 카드 · 파랑 칩
@@ -77,24 +78,22 @@ export const CONFIRM = {
 // 하단 검색바 / 검색 결과
 export const SEARCH_PLACEHOLDER = '검색어를 입력해 주세요.'
 export const GUIDE_LINK_LABEL = '관련 가이드 보기'
-export const NO_RESULT = '요청하신 내용을 찾을 수 없어요.\n다른 키워드로 검색해 주세요.'
 
-// ─── 폼 카피 (인라인 — 문의등록 / 오류신고) ──────────────────────────────
-// userLabel: 폼을 띄울 때 표시되는 사용자 말풍선
-// intro    : 폼 위 봇 안내 말풍선(선택)
-// link     : 봇 안내 아래 "전체 가이드 보기" 링크(선택)
+// ─── 폼 카피 (인라인 — 해결방법요청 / 오류신고) ──────────────────────────
+// 검색 무결과 / "해결방법 요청하기" → solution 폼 (앞 말풍선 2개)
+export const SOLUTION_INTRO = {
+  user: '관련된 가이드를 찾을 수 없습니다.',
+  bot: '다른 키워드로 찾거나, 가이드가 필요한 기능에 대해 설명해 주세요.',
+}
+const FORM_PLACEHOLDER =
+  '어떤 작업이 막혔는지, 무엇을 시도했는지 알려주세요.\n\n예) 전환결제 처리 방법을 찾고 있어요.\n결제관리에서 봤지만 없었어요.'
 export const FORM_COPY = {
-  inquiry: {
-    userLabel: '가이드 안내 및 문제 해결이 어려운 문의일 경우',
-    placeholder:
-      '어떤 도움이 필요하세요?\n상황과 요청을 구체적으로 적어주세요.\n\n예) ○○○ 학생 환불 계좌를 변경해야 해요.\n학부모 요청이고 신분 확인했어요.',
-  },
+  solution: { placeholder: FORM_PLACEHOLDER },
   error: {
     userLabel: '오류신고',
     intro: '허위·중복 신고로 인해 정말 필요한 업무 처리가 지연될 수 있어요. 신고 전 가이드를 한 번 더 확인해 주세요.',
     link: { label: '전체 가이드 보기', url: '/guides' },
-    placeholder:
-      '발견한 오류 내용을 작성해 주세요.\n\n예) 회원조회에서 정원이 실제와 다르게 보여요.\n일반 처리 후 목록을 새로고침하면 발생해요.',
+    placeholder: FORM_PLACEHOLDER,
   },
 }
 

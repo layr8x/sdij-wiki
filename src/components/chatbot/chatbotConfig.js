@@ -74,6 +74,10 @@ export const CONFIRM = {
   done: '접수됐어요! ✅\n담당자 확인 후 개별 연락드려요.',
   more: '더 궁금하신 부분이 있으신가요?',
 }
+// 하단 검색바 / 검색 결과
+export const SEARCH_PLACEHOLDER = '검색어를 입력해 주세요.'
+export const GUIDE_LINK_LABEL = '관련 가이드 보기'
+export const NO_RESULT = '요청하신 내용을 찾을 수 없어요.\n다른 키워드로 검색해 주세요.'
 
 // ─── 폼 카피 (인라인 — 문의등록 / 오류신고) ──────────────────────────────
 // userLabel: 폼을 띄울 때 표시되는 사용자 말풍선

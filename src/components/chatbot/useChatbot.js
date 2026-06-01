@@ -13,8 +13,8 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { getRelatedGuidesForQa } from './intents'
-import { getQaByCategory, OFFICIAL_QA_CATEGORIES } from '@/data/officialQa'
-import { getCategoryLabel, FORM_COPY, CONFIRM } from './chatbotConfig'
+import { getQaByCategory, OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, matchOfficialQa } from '@/data/officialQa'
+import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, NO_RESULT } from './chatbotConfig'
 
 // 외부 호환 export (index.js barrel)
 export const MSG_TYPES = {
@@ -48,7 +48,7 @@ function buildGuideCard(qa) {
 }
 
 const ONBOARDED_KEY = 'ams-wiki-chatbot-onboarded-v1'
-const initialThread = () => [mk('notice'), mk('greeting'), mk('chips')]
+const initialThread = () => [mk('greeting'), mk('chips')]
 
 export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
   const [isOpen, setIsOpen] = useState(false)
@@ -94,13 +94,42 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
     else openCategory(chip.id, chip.label)
   }, [startError, openCategory])
 
-  // ─── FAQ 행 클릭 ────────────────────────────────────────────────────────
+  // ─── FAQ 행 클릭 → 답변 + 가이드 카드 + 후속 칩 ─────────────────────────
   const pickQa = useCallback((qa) => {
     append([
       mk('user', { text: qa.q }),
       mk('bot', { text: answerText(qa) }),
       mk('guide', { guide: buildGuideCard(qa) }),
+      mk('bot', { text: CONFIRM.more }),
+      mk('chips'),
     ])
+  }, [append])
+
+  // ─── 하단 검색 (자유 입력) + 자동완성 ───────────────────────────────────
+  const faqSuggestions = useCallback((q, limit = 5) => {
+    const nq = (q || '').trim().toLowerCase()
+    if (nq.length < 1) return []
+    return OFFICIAL_QA
+      .filter((x) => x.q.toLowerCase().includes(nq) || (x.tip || '').toLowerCase().includes(nq))
+      .slice(0, limit)
+  }, [])
+
+  const search = useCallback((rawQuery) => {
+    const query = (rawQuery || '').trim()
+    if (!query) return
+    const hit = matchOfficialQa(query)
+    if (hit?.item) {
+      const guide = buildGuideCard(hit.item)
+      append([
+        mk('user', { text: query }),
+        mk('bot', { text: answerText(hit.item) }),
+        mk('link', { label: GUIDE_LINK_LABEL, url: guide.url || '/guides' }),
+        mk('bot', { text: CONFIRM.more }),
+        mk('chips'),
+      ])
+    } else {
+      append([mk('user', { text: query }), mk('bot', { text: NO_RESULT }), mk('chips')])
+    }
   }, [append])
 
   const openGuide = useCallback((arg) => {
@@ -149,6 +178,7 @@ export function useChatbot({ userName = '명준', onOpenGuide } = {}) {
     isFormDone: (id) => doneForms.has(id),
     open, close, toggle, reset,
     pickChip, openCategory, pickQa, requestSolution, startError, openGuide,
+    search, faqSuggestions,
     submitForm, cancelForm, markVisited,
   }
 }

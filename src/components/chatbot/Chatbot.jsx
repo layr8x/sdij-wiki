@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { useChatbot, MSG_TYPES } from './useChatbot'
 import { MIcon } from './chatbotIcons'
 import {
-  T, FONT, SYSTEM_NOTICE, CHIP_MENU, GREETING, FORM_COPY, ATTACH_LIMIT, getCategoryLabel,
+  T, FONT, CHIP_MENU, GREETING, FORM_COPY, ATTACH_LIMIT, SEARCH_PLACEHOLDER, getCategoryLabel,
 } from './chatbotConfig'
 
 const R_BOT = '0px 8px 8px 8px' // 봇 말풍선 — 좌상단 직각
@@ -50,7 +50,7 @@ function ChatbotFAB({ onClick, pulse }) {
       <button
         type="button"
         onClick={onClick}
-        aria-label="AMS 운영도우미 열기 (⌘+/)"
+        aria-label="AMS 챗봇 열기 (⌘+/)"
         className={cn(
           'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full flex items-center justify-center text-white',
           'shadow-lg hover:shadow-xl transition-all duration-200 ease-out hover:scale-105 active:scale-95',
@@ -75,11 +75,9 @@ function WidgetHeader({ onClose }) {
       <div className="flex-1 flex items-center gap-[8px] min-w-0">
         <span className="whitespace-nowrap" style={{ fontSize: '20px', lineHeight: '32px', color: T.inkOnColor, ...FONT.ss }}>
           <b style={{ fontWeight: 600 }}>AMS</b>
-          <span style={{ fontWeight: 400 }}> 운영도우미</span>
+          <span style={{ fontWeight: 400 }}> 챗봇</span>
         </span>
-        <span className="flex items-center rounded-[4px] px-[6px] leading-none" style={{ backgroundColor: T.tealBg, border: `0.8px solid ${T.tealBorder}`, color: T.tealText, fontSize: '14px', fontWeight: 600, height: 22, ...FONT.ss }}>
-          BETA
-        </span>
+        <span className="whitespace-nowrap" style={{ ...FONT.bodyM, color: T.tealBorder }}>BETA</span>
       </div>
       <button type="button" onClick={onClose} aria-label="닫기 (Esc)" className="shrink-0 opacity-70 hover:opacity-100 transition-opacity" style={{ color: T.inkOnColor }}>
         <XIcon size={22} />
@@ -88,22 +86,11 @@ function WidgetHeader({ onClose }) {
   )
 }
 
-// ─── 공지 카드 ───────────────────────────────────────────────────────────
-function NoticeCard() {
-  return (
-    <div className="w-full flex items-center gap-[8px] px-[16px] py-[12px] rounded-[12px]" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
-      <span className="w-[32px] text-center shrink-0" style={{ fontSize: '20px', lineHeight: '32px' }}>{SYSTEM_NOTICE.emoji}</span>
-      <span className="flex-1 min-w-0 truncate" style={{ ...FONT.bodyLBold, color: T.ink }}>{SYSTEM_NOTICE.text}</span>
-      <MIcon name="chevron_right" size={24} color="rgba(22,22,22,0.45)" />
-    </div>
-  )
-}
-
 // ─── 말풍선 ──────────────────────────────────────────────────────────────
 function BotBubble({ text }) {
   return (
     <div className="flex justify-start w-full">
-      <div className="px-[16px] py-[12px] max-w-[360px]" style={{ backgroundColor: T.white, borderRadius: R_BOT }}>
+      <div className="px-[16px] py-[12px] max-w-[400px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
         <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyLBold, color: T.ink }}>{text}</p>
       </div>
     </div>
@@ -113,7 +100,7 @@ function BotBubble({ text }) {
 function UserBubble({ text }) {
   return (
     <div className="flex justify-end w-full animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <div className="px-[16px] py-[12px] max-w-[360px]" style={{ backgroundColor: T.brandBlue, borderRadius: R_USER }}>
+      <div className="px-[16px] py-[12px] max-w-[400px]" style={{ backgroundColor: T.brandBlue, borderRadius: R_USER }}>
         <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyLBold, color: T.inkOnColor }}>{text}</p>
       </div>
     </div>
@@ -199,7 +186,7 @@ function GuideCard({ guide, onOpen }) {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         className="flex flex-col gap-[12px] p-[16px] max-w-[360px] w-full text-left transition-shadow"
-        style={{ backgroundColor: T.white, borderRadius: R_BOT, outline: hover ? `1.5px solid ${T.noticeBorder}` : '1.5px solid transparent' }}
+        style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT, outline: hover ? `1.5px solid ${T.noticeBorder}` : '1.5px solid transparent' }}
       >
         <p style={{ ...FONT.bodyMBold, color: T.brandBlue }}>📘 {guide.categoryLabel}</p>
         <p className="break-words" style={{ ...FONT.headlineBold, color: T.navy }}>{guide.title}</p>
@@ -217,8 +204,8 @@ function GuideCard({ guide, onOpen }) {
 function GuideLink({ label, url, onOpen }) {
   return (
     <div className="flex justify-start w-full">
-      <button type="button" onClick={() => onOpen(url)} className="flex items-center gap-[4px] px-[16px] py-[12px]" style={{ backgroundColor: T.white, borderRadius: R_BOT }}>
-        <span className="underline underline-offset-[3px]" style={{ ...FONT.bodyLBold, color: T.link }}>{label}</span>
+      <button type="button" onClick={() => onOpen(url)} className="flex items-center gap-[4px] px-[16px] py-[12px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
+        <span style={{ ...FONT.bodyL, color: T.link }}>{label}</span>
         <MIcon name="open_in_new" size={24} color={T.link} />
       </button>
     </div>
@@ -298,8 +285,6 @@ function InlineForm({ kind, done, onSubmit, onCancel }) {
 // ─── 메시지 렌더러 ───────────────────────────────────────────────────────
 function ThreadMessage({ m, chatbot }) {
   switch (m.type) {
-    case MSG_TYPES.NOTICE:
-      return <NoticeCard />
     case MSG_TYPES.GREETING:
       return <GreetingGroup />
     case MSG_TYPES.CHIPS:
@@ -336,6 +321,78 @@ function ThreadMessage({ m, chatbot }) {
   }
 }
 
+// ─── 하단 검색바 (자유 입력 + FAQ 자동완성) ─────────────────────────────
+function SearchBar({ onSearch, suggest, onPickSuggestion }) {
+  const [text, setText] = useState('')
+  const [focused, setFocused] = useState(false)
+  const [showSug, setShowSug] = useState(true)
+  const inputRef = useRef(null)
+  const active = !!text.trim()
+  const list = showSug && active ? suggest(text) : []
+
+  const submit = (v) => {
+    const q = (v ?? text).trim()
+    if (!q) return
+    onSearch(q)
+    setText('')
+    setShowSug(false)
+    inputRef.current?.focus()
+  }
+  const pick = (qa) => {
+    setText('')
+    setShowSug(false)
+    onPickSuggestion(qa)
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="shrink-0 p-[24px]" style={{ backgroundColor: T.bg }}>
+      <div className="relative">
+        {list.length > 0 && (
+          <div className="absolute bottom-full left-0 right-0 mb-2 rounded-[16px] overflow-hidden" style={{ backgroundColor: T.white, boxShadow: T.shadowXl, border: `1px solid ${T.border}` }}>
+            {list.map((qa, i) => (
+              <button
+                key={qa.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(qa)}
+                className="w-full text-left px-[16px] py-[12px] transition-colors hover:bg-[#F7FAFF]"
+                style={{ borderTop: i === 0 ? 'none' : `1px solid ${T.border}`, ...FONT.bodyLBold, color: T.navy }}
+              >
+                {qa.q.replace(/[?？]\s*$/, '')}?
+              </button>
+            ))}
+          </div>
+        )}
+        <form
+          onSubmit={(e) => { e.preventDefault(); submit() }}
+          className="flex items-center p-[8px] rounded-[8px]"
+          style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, transition: 'border-color 150ms' }}
+        >
+          <div className="flex-1 flex items-center gap-[2px] pl-[8px] min-w-0">
+            <span className="w-px h-[24px] shrink-0" style={{ backgroundColor: T.ink }} />
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={(e) => { setText(e.target.value); setShowSug(true) }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder={SEARCH_PLACEHOLDER}
+              aria-label="FAQ 검색"
+              className="flex-1 bg-transparent border-0 outline-none placeholder:text-[rgba(22,22,22,0.32)]"
+              style={{ ...FONT.bodyL, color: T.ink }}
+              autoComplete="off"
+            />
+          </div>
+          <button type="submit" aria-label="검색" className="shrink-0 flex items-center justify-center p-[10px] rounded-[4px] transition-colors hover:bg-[#F4F4F4]">
+            <MIcon name="search" size={28} color={active ? T.ink : 'rgba(22,22,22,0.45)'} />
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ─── 위젯 ────────────────────────────────────────────────────────────────
 function ChatbotWidget({ chatbot }) {
   const isMobile = useIsMobile()
@@ -357,6 +414,7 @@ function ChatbotWidget({ chatbot }) {
           <ThreadMessage key={m.id} m={m} chatbot={chatbot} />
         ))}
       </div>
+      <SearchBar onSearch={chatbot.search} suggest={chatbot.faqSuggestions} onPickSuggestion={chatbot.pickQa} />
     </div>
   )
 }

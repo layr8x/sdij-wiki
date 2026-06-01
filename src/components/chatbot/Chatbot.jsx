@@ -109,9 +109,9 @@ function BotBubble({ text, answer, link, onOpen }) {
       <div className="flex flex-col gap-[24px] p-[16px] max-w-[400px] overflow-hidden" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
         <p className="w-full break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{body}</p>
         {link && (
-          <button type="button" onClick={() => onOpen?.(link.url)} className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter,transform] duration-150 hover:brightness-[0.97] active:scale-[0.99]" style={{ backgroundColor: T.bg }}>
+          <button type="button" onClick={() => onOpen?.(link.url)} className="group w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter,transform] duration-150 hover:brightness-[0.97] active:scale-[0.99]" style={{ backgroundColor: T.bg }}>
             <span className="flex-1 text-center" style={{ ...FONT.bodyL, color: T.ink }}>{link.label}</span>
-            <MIcon name="open_in_new" size={24} color={T.ink} />
+            <MIcon name="open_in_new" size={24} color={T.ink} className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" />
           </button>
         )}
       </div>
@@ -180,11 +180,11 @@ function FaqRow({ children, onClick, isLink, last }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-[16px] p-[16px] text-left transition-colors duration-150 hover:bg-[#F7FAFF] active:bg-[#EDF5FF]"
+      className="group w-full flex items-center gap-[16px] p-[16px] text-left transition-colors duration-150 hover:bg-[#F7FAFF] active:bg-[#EDF5FF]"
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
       <span className="flex-1 min-w-0 break-words" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>{children}</span>
-      <MIcon name="open_in_new" size={24} color={isLink ? T.link : T.helper} className="shrink-0" style={isLink ? { opacity: 0.4 } : undefined} />
+      <MIcon name="open_in_new" size={24} color={isLink ? T.link : T.helper} className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" style={isLink ? { opacity: 0.4 } : undefined} />
     </button>
   )
 }
@@ -222,7 +222,7 @@ function GuideCard({ guide, onOpen }) {
             {guide.snippet && <p className="break-words line-clamp-2" style={{ ...FONT.bodyM, color: T.helper }}>{guide.snippet}</p>}
             <span className="flex items-center gap-[4px]">
               <span className="underline underline-offset-[3px]" style={{ ...FONT.bodyM, color: T.link }}>전체 가이드 보기</span>
-              <MIcon name="open_in_new" size={24} color={T.link} />
+              <MIcon name="open_in_new" size={24} color={T.link} style={{ transition: 'transform 150ms ease-out', transform: hover ? 'translate(2px,-2px)' : 'none' }} />
             </span>
           </div>
         </div>
@@ -305,9 +305,9 @@ function FormActionBar({ canSubmit, onCancel, onSubmit }) {
       <button type="button" onClick={onCancel} className="flex items-center justify-center px-[32px] py-[16px] rounded-[32px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
         <span style={{ ...BTN, color: T.ink }}>취소</span>
       </button>
-      <button type="button" onClick={onSubmit} disabled={!canSubmit} className="flex items-center justify-center gap-[4px] pl-[32px] pr-[28px] py-[16px] rounded-[32px] transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed" style={{ backgroundColor: canSubmit ? T.brandBlue : T.disabled }}>
+      <button type="button" onClick={onSubmit} disabled={!canSubmit} className="group flex items-center justify-center gap-[4px] pl-[32px] pr-[28px] py-[16px] rounded-[32px] transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed" style={{ backgroundColor: canSubmit ? T.brandBlue : T.disabled }}>
         <span style={{ ...BTN, color: canSubmit ? T.inkOnColor : T.placeholder }}>보내기</span>
-        <MIcon name="send" size={28} color={canSubmit ? T.inkOnColor : T.placeholder} />
+        <MIcon name="send" size={28} color={canSubmit ? T.inkOnColor : T.placeholder} className={`transition-transform duration-150 ease-out motion-reduce:transition-none ${canSubmit ? 'group-hover:translate-x-[3px]' : ''}`} />
       </button>
     </div>
   )
@@ -360,7 +360,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
     <div className="shrink-0 p-[16px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
       <div className="relative">
         {list.length > 0 && (
-          <div className="absolute bottom-full left-0 right-0 mb-[8px] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-200" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, boxShadow: '0 -4px 16px rgba(0,0,0,0.06)' }}>
+          <div className="absolute bottom-full left-0 right-0 mb-[8px] overflow-hidden rounded-[8px] animate-in fade-in slide-in-from-bottom-1 duration-200" style={{ backgroundColor: T.white, border: `1px solid ${T.border}` }}>
             {!trimmed && <div className="px-[16px] pt-[12px] pb-[4px]" style={{ ...FONT.bodyM, color: T.helper }}>자주 찾는 항목</div>}
             {list.map((qa, i) => (
               <button
@@ -369,8 +369,8 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
                 onMouseEnter={() => setActive(i)}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(qa)}
-                className="w-full text-left p-[16px] transition-colors"
-                style={{ borderBottom: i === list.length - 1 ? 'none' : `1px solid ${T.border}`, backgroundColor: active === i ? '#F0F5FF' : T.white, ...FONT.bodyL, color: T.navy }}
+                className="w-full text-left p-[16px] transition-colors duration-150"
+                style={{ borderBottom: i === list.length - 1 ? 'none' : `1px solid ${T.border}`, backgroundColor: active === i ? '#F7FAFF' : T.white, ...FONT.bodyL, color: T.navy }}
               >
                 {highlightMatch(qa.q.replace(/[?？]\s*$/, '') + '?', text)}
               </button>
@@ -396,7 +396,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
             style={{ ...FONT.bodyL, color: T.ink }}
             autoComplete="off"
           />
-          <button type="submit" aria-label="검색" className="shrink-0 flex items-center justify-center p-[12px] rounded-full transition-[filter,transform] hover:brightness-110 active:scale-95" style={{ backgroundColor: T.brandBlue }}>
+          <button type="submit" aria-label="검색" className="shrink-0 flex items-center justify-center p-[12px] rounded-full transition-[filter,transform] duration-150 hover:brightness-110 hover:scale-105 active:scale-95" style={{ backgroundColor: T.brandBlue }}>
             <MIcon name="search" size={24} color={T.inkOnColor} />
           </button>
         </form>

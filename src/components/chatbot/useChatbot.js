@@ -134,15 +134,23 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
   }, [respond])
 
   // ─── 하단 검색 + 자동완성 (officialQa + 매니저 FAQ 전체 참조) ────────────
+  // 폭넓은 매칭: 전체 질의 + 공백 토큰 + (붙여쓴 한글 합성어는 2글자 묶음)으로
+  // 관련 항목을 두루 노출 (예: "환불취소" → 환불·취소 관련 항목 다수)
   const faqSuggestions = useCallback((q, limit = 6) => {
-    if (!(q || '').trim()) return []
-    const nq = q.trim().toLowerCase()
-    const qa = OFFICIAL_QA
-      .filter((x) => x.q.toLowerCase().includes(nq) || (x.tip || '').toLowerCase().includes(nq))
-      .slice(0, 3)
+    const query = (q || '').trim()
+    if (!query) return []
+    const parts = new Set([query.toLowerCase()])
+    for (const t of query.split(/\s+/)) if (t.length >= 2) parts.add(t.toLowerCase())
+    const compact = query.replace(/\s+/g, '')
+    if (/^[가-힣]{3,}$/.test(compact)) {
+      for (let i = 0; i < compact.length - 1; i++) parts.add(compact.slice(i, i + 2).toLowerCase())
+    }
+    const tokens = [...parts]
+    const hit = (text) => { const t = (text || '').toLowerCase(); return tokens.some((p) => t.includes(p)) }
+    const qa = OFFICIAL_QA.filter((x) => hit(x.q) || hit(x.tip)).slice(0, 4)
     const merged = []
     const seen = new Set()
-    for (const it of [...qa, ...searchManagerFaq(q, 4, faqList)]) {
+    for (const it of [...qa, ...searchManagerFaq(query, 4, faqList)]) {
       if (seen.has(it.q)) continue
       seen.add(it.q); merged.push(it)
       if (merged.length >= limit) break

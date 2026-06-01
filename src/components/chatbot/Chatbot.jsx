@@ -6,7 +6,7 @@
 // 토큰: 배경 #F4F4F4 · 헤더 "AMS 챗봇" · 유저 말풍선 연한파랑 #EDF5FF/글씨 #0043CE
 //       · body 20/32 · 봇 말풍선/입력 4px · 칩 pill · 폼 입력 #EDF5FF 패널 · 폭 512.
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { useManagerFaq } from '@/hooks/useManagerFaq'
 import { useChatbot, MSG_TYPES } from './useChatbot'
@@ -30,14 +30,6 @@ function useIsMobile() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
   return isMobile
-}
-
-function XIcon({ size = 24, color = 'currentColor', stroke = 2 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M6 6l12 12M18 6 6 18" stroke={color} strokeWidth={stroke} strokeLinecap="round" />
-    </svg>
-  )
 }
 
 // ─── FAB (런처 — 항상 표시 · 시선 유도 인터랙션) ─────────────────────────
@@ -191,10 +183,8 @@ function FaqRow({ children, onClick, isLink, last }) {
       className="w-full flex items-center gap-[16px] p-[16px] text-left transition-colors duration-150 hover:bg-[#F7FAFF] active:bg-[#EDF5FF]"
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
-      <span className="flex-1 min-w-0 break-words inline-flex items-center gap-[4px]" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>
-        {children}
-        {isLink && <MIcon name="open_in_new" size={24} color={T.link} />}
-      </span>
+      <span className="flex-1 min-w-0 break-words" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>{children}</span>
+      <MIcon name="open_in_new" size={24} color={isLink ? T.link : T.helper} className="shrink-0" style={isLink ? { opacity: 0.4 } : undefined} />
     </button>
   )
 }
@@ -202,7 +192,7 @@ function FaqRow({ children, onClick, isLink, last }) {
 function FaqList({ categoryId, items, onPickQa, onRequestSolution, onOpenGuide }) {
   const label = getCategoryLabel(categoryId)
   return (
-    <div className="shrink-0 rounded-[16px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ boxShadow: T.shadowS }}>
+    <div className="shrink-0 rounded-[8px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ border: `1px solid ${T.border}` }}>
       {items.map((qa) => (
         <FaqRow key={qa.id} onClick={() => onPickQa(qa)}>{qa.q.replace(/[?？]\s*$/, '')}?</FaqRow>
       ))}
@@ -256,7 +246,7 @@ function FileChip({ name, onRemove }) {
     <div className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
       <span className="flex-1 min-w-0 truncate" style={{ ...BTN, color: T.ink }}>{name}</span>
       <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0" style={{ color: T.ink }}>
-        <XIcon size={28} stroke={2} />
+        <MIcon name="close" size={28} color={T.ink} />
       </button>
     </div>
   )
@@ -275,7 +265,7 @@ function InlineForm({ m, chatbot }) {
     // 접수완료(읽기전용) — 시안 871:26366: 회색 텍스트박스(160·흐린글씨) + 회색 첨부칩, 안내문구 없음
     return (
       <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
-        <div className="w-full rounded-[4px] p-[16px] overflow-hidden" style={{ minHeight: 160, backgroundColor: T.bg, border: `1px solid ${T.border}` }}>
+        <div className="w-full rounded-[4px] p-[16px] overflow-y-auto" style={{ height: 160, backgroundColor: T.bg, border: `1px solid ${T.border}` }}>
           <p className="whitespace-pre-wrap break-words" style={{ ...FONT.bodyL, color: T.inkSecondary }}>{m.submittedText}</p>
         </div>
         {(m.submittedFiles || []).map((name, i) => <FileChip key={i} name={name} />)}
@@ -291,8 +281,8 @@ function InlineForm({ m, chatbot }) {
         value={chatbot.formText}
         onChange={(e) => chatbot.setFormText(e.target.value)}
         placeholder={copy.placeholder}
-        className="w-full rounded-[4px] p-[16px] resize-none outline-none placeholder:text-[rgba(22,22,22,0.32)]"
-        style={{ minHeight: 160, backgroundColor: T.white, border: `1px solid ${T.border}`, ...FONT.bodyL, color: T.ink }}
+        className="w-full rounded-[4px] p-[16px] resize-none outline-none overflow-y-auto placeholder:text-[rgba(22,22,22,0.32)]"
+        style={{ height: 160, backgroundColor: T.white, border: `1px solid ${T.border}`, ...FONT.bodyL, color: T.ink }}
       />
       {chatbot.formFiles.map((f, i) => <FileChip key={i} name={f.name} onRemove={() => chatbot.removeFile(i)} />)}
       {chatbot.formFiles.length < ATTACH_LIMIT.maxCount && (
@@ -456,13 +446,9 @@ function ThreadMessage({ m, chatbot }) {
   }
 }
 
-// ─── 위젯 (팝업 — 모달 아님 · 바깥 클릭/런처/Esc 로 닫힘) ─────────────────
-function ChatbotWidget({ chatbot }) {
-  const isMobile = useIsMobile()
+// ─── 대화 본문 (헤더 + 메시지 + 입력) — 위젯/별도창 공통 ──────────────────
+function ChatbotConversation({ chatbot }) {
   const bodyRef = useRef(null)
-  const panelRef = useRef(null)
-  const { close } = chatbot
-
   useEffect(() => {
     const el = bodyRef.current
     if (!el) return
@@ -470,7 +456,32 @@ function ChatbotWidget({ chatbot }) {
     el.scrollTo({ top: el.scrollHeight, behavior: reduce ? 'auto' : 'smooth' })
   }, [chatbot.messages, chatbot.activeForm])
 
-  // 팝업: 바깥(런처 제외) 클릭 시 닫기
+  return (
+    <>
+      <WidgetHeader />
+      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col px-[16px] py-[24px] [&>*]:shrink-0" style={{ backgroundColor: T.bg }}>
+        {chatbot.messages.map((m, i) => (
+          <div key={m.id} className="w-full" style={{ marginTop: gapBefore(chatbot.messages[i - 1], m) }}>
+            <ThreadMessage m={m} chatbot={chatbot} />
+          </div>
+        ))}
+      </div>
+      {chatbot.activeForm ? (
+        <FormActionBar canSubmit={chatbot.canSubmit} onCancel={chatbot.cancelForm} onSubmit={chatbot.submitForm} />
+      ) : (
+        <SearchBar onSearch={chatbot.search} suggest={chatbot.faqSuggestions} popular={chatbot.popularSuggestions} onPickSuggestion={chatbot.pickSuggestion} />
+      )}
+    </>
+  )
+}
+
+// ─── 위젯 (인페이지 폴백 — 팝업 차단 시 · 바깥 클릭/런처로 닫힘) ──────────
+function ChatbotWidget({ chatbot }) {
+  const isMobile = useIsMobile()
+  const panelRef = useRef(null)
+  const { close } = chatbot
+
+  // 바깥(런처 제외) 클릭 시 닫기
   useEffect(() => {
     const onDown = (e) => {
       const t = e.target
@@ -492,19 +503,19 @@ function ChatbotWidget({ chatbot }) {
 
   return (
     <div ref={panelRef} role="dialog" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>
-      <WidgetHeader />
-      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col px-[16px] py-[24px] [&>*]:shrink-0" style={{ backgroundColor: T.bg }}>
-        {chatbot.messages.map((m, i) => (
-          <div key={m.id} className="w-full" style={{ marginTop: gapBefore(chatbot.messages[i - 1], m) }}>
-            <ThreadMessage m={m} chatbot={chatbot} />
-          </div>
-        ))}
-      </div>
-      {chatbot.activeForm ? (
-        <FormActionBar canSubmit={chatbot.canSubmit} onCancel={chatbot.cancelForm} onSubmit={chatbot.submitForm} />
-      ) : (
-        <SearchBar onSearch={chatbot.search} suggest={chatbot.faqSuggestions} popular={chatbot.popularSuggestions} onPickSuggestion={chatbot.pickSuggestion} />
-      )}
+      <ChatbotConversation chatbot={chatbot} />
+    </div>
+  )
+}
+
+// ─── 별도 브라우저 창 페이지 (/chatbot) — 창 전체를 채움 ──────────────────
+export function ChatbotPopupPage() {
+  const faqList = useManagerFaq()
+  const chatbot = useChatbot({ faqList })
+  useEffect(() => { document.title = 'AMS 챗봇' }, [])
+  return (
+    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: T.bg }}>
+      <ChatbotConversation chatbot={chatbot} />
     </div>
   )
 }
@@ -519,9 +530,26 @@ export function Chatbot({ userName = '명준', onOpenGuide }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatbot.isOpen])
 
+  // 런처 클릭 → 챗봇을 별도 브라우저 창으로 띄움 (팝업 차단 시 인페이지 폴백)
+  const openChatbot = useCallback(() => {
+    chatbot.markVisited()
+    const w = 520
+    const h = Math.min(940, (window.screen?.availHeight) || 900)
+    const left = Math.max(0, ((window.screen?.availWidth) || 1280) - w - 40)
+    let win
+    try {
+      win = window.open('/chatbot', 'ams-chatbot', `popup=yes,width=${w},height=${h},left=${left},top=80`)
+    } catch { win = null }
+    if (!win || win.closed || typeof win.closed === 'undefined') {
+      chatbot.open() // 팝업이 차단되면 인페이지 위젯으로 폴백
+    } else {
+      win.focus()
+    }
+  }, [chatbot])
+
   return (
     <>
-      <ChatbotFAB onClick={chatbot.toggle} pulse={chatbot.isFirstVisit} open={chatbot.isOpen} />
+      <ChatbotFAB onClick={openChatbot} pulse={chatbot.isFirstVisit} open={chatbot.isOpen} />
       {chatbot.isOpen && <ChatbotWidget chatbot={chatbot} />}
     </>
   )

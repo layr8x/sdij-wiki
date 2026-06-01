@@ -2,7 +2,7 @@
 // Barrel export — 외부에서는 이 한 줄만 사용
 //   import { Chatbot, useChatbot } from '@/components/chatbot'
 
-export { Chatbot, default } from './Chatbot'
+export { Chatbot, ChatbotPopupPage, default } from './Chatbot'
 export { useChatbot, CHATBOT_STAGES, MSG_TYPES } from './useChatbot'
 export {
   INTENT_RULES,

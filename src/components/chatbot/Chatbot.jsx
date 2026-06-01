@@ -241,14 +241,14 @@ function GuideCard({ guide, onOpen }) {
   )
 }
 
-// ─── 첨부 파일 칩 ────────────────────────────────────────────────────────
+// ─── 첨부 파일 칩 (시안 871:26336 — 흰 배경·테두리·rounded-4·삭제 아이콘 28) ─
 function FileChip({ name, onRemove }) {
   return (
-    <div className="w-full flex items-center gap-[4px] px-[16px] py-[8px] rounded-[2px]" style={{ backgroundColor: T.surfaceHover }}>
-      <span className="flex-1 min-w-0 truncate" style={{ fontSize: '18px', lineHeight: '32px', color: T.ink, ...FONT.ss }}>{name}</span>
+    <div className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
+      <span className="flex-1 min-w-0 truncate" style={{ ...BTN, color: T.ink }}>{name}</span>
       {onRemove && (
-        <button type="button" onClick={onRemove} aria-label="첨부 삭제" style={{ color: T.ink }}>
-          <XIcon size={22} stroke={2.2} />
+        <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0" style={{ color: T.ink }}>
+          <XIcon size={28} stroke={2} />
         </button>
       )}
     </div>

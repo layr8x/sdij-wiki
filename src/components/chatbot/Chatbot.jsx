@@ -202,7 +202,7 @@ function FaqRow({ children, onClick, isLink, last }) {
 function FaqList({ categoryId, items, onPickQa, onRequestSolution, onOpenGuide }) {
   const label = getCategoryLabel(categoryId)
   return (
-    <div className="rounded-[16px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ boxShadow: T.shadowS }}>
+    <div className="shrink-0 rounded-[16px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ boxShadow: T.shadowS }}>
       {items.map((qa) => (
         <FaqRow key={qa.id} onClick={() => onPickQa(qa)}>{qa.q.replace(/[?？]\s*$/, '')}?</FaqRow>
       ))}
@@ -477,7 +477,7 @@ function ChatbotWidget({ chatbot }) {
   return (
     <div ref={panelRef} role="dialog" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>
       <WidgetHeader />
-      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col gap-[24px] px-[16px] py-[24px]" style={{ backgroundColor: T.bg }}>
+      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col gap-[24px] px-[16px] py-[24px] [&>*]:shrink-0" style={{ backgroundColor: T.bg }}>
         {chatbot.messages.map((m) => (
           <ThreadMessage key={m.id} m={m} chatbot={chatbot} />
         ))}

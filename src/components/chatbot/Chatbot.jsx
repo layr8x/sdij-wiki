@@ -415,6 +415,15 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
   )
 }
 
+// ─── 메시지 간 간격 (시안: 봇 연속 메시지 8px · 화자전환/칩 24px) ──────────
+const BOT_SIDE = new Set(['greeting', 'bot', 'faq', 'guide', 'form', 'typing'])
+function gapBefore(prev, m) {
+  if (!prev) return 0
+  if (m.type === 'chips' || m.type === 'user') return 24
+  if (BOT_SIDE.has(m.type) && BOT_SIDE.has(prev.type)) return 8
+  return 24
+}
+
 // ─── 메시지 렌더러 ───────────────────────────────────────────────────────
 function ThreadMessage({ m, chatbot }) {
   switch (m.type) {
@@ -484,9 +493,11 @@ function ChatbotWidget({ chatbot }) {
   return (
     <div ref={panelRef} role="dialog" aria-label="AMS 챗봇" className={widgetClass} style={{ backgroundColor: T.bg, boxShadow: isMobile ? 'none' : T.shadowXl }}>
       <WidgetHeader />
-      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col gap-[24px] px-[16px] py-[24px] [&>*]:shrink-0" style={{ backgroundColor: T.bg }}>
-        {chatbot.messages.map((m) => (
-          <ThreadMessage key={m.id} m={m} chatbot={chatbot} />
+      <div ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="AMS 챗봇 대화" className="flex-1 overflow-y-auto flex flex-col px-[16px] py-[24px] [&>*]:shrink-0" style={{ backgroundColor: T.bg }}>
+        {chatbot.messages.map((m, i) => (
+          <div key={m.id} className="w-full" style={{ marginTop: gapBefore(chatbot.messages[i - 1], m) }}>
+            <ThreadMessage m={m} chatbot={chatbot} />
+          </div>
         ))}
       </div>
       {chatbot.activeForm ? (

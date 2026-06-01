@@ -184,7 +184,7 @@ function FaqRow({ children, onClick, isLink, last }) {
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
       <span className="flex-1 min-w-0 break-words" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>{children}</span>
-      <MIcon name="open_in_new" size={24} color={isLink ? T.link : T.helper} className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" style={isLink ? { opacity: 0.4 } : undefined} />
+      <MIcon name="open_in_new" size={24} color={isLink ? T.link : T.placeholder} className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" style={isLink ? { opacity: 0.4 } : undefined} />
     </button>
   )
 }
@@ -245,8 +245,8 @@ function FileChip({ name, onRemove }) {
   return (
     <div className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
       <span className="flex-1 min-w-0 truncate" style={{ ...BTN, color: T.ink }}>{name}</span>
-      <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0" style={{ color: T.ink }}>
-        <MIcon name="close" size={28} color={T.ink} />
+      <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0 transition-colors hover:brightness-0" style={{ color: T.placeholder }}>
+        <MIcon name="delete" size={28} color={T.placeholder} />
       </button>
     </div>
   )

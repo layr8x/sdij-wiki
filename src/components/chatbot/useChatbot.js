@@ -14,8 +14,13 @@ import { fetchFaqViews, incrementFaqView } from '@/lib/db'
 export const MSG_TYPES = {
   GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
   BOT: 'bot', FAQ: 'faq', GUIDE: 'guide', FORM: 'form', TYPING: 'typing',
+  // v6: 문의 처리 현황(Stepper) · 문의 처리 완료(요약 + CSAT)
+  STEPPER: 'stepper', CLOSING: 'closing',
 }
 export const CHATBOT_STAGES = { FAQ: 1, RAG: 2, TICKET: 3, NL2SQL: 4 }
+
+// '대화 마치기' 칩 라벨 — 클릭 시 finishConversation(문의 처리 완료 + CSAT) 호출
+const FINISH_REPLY = '대화 마치기 ✓'
 
 let _id = 1
 const nextId = () => _id++
@@ -146,7 +151,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       [
         mk('bot', { answer: answerText(qa), link: relatedGuideLink(qa.q, qa.category) }),
         mk('bot', { text: CONFIRM.more }),
-        mk('chips'),
+        mk('chips', { showFinish: true }),
       ]
     )
   }, [respond])
@@ -158,7 +163,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       [
         mk('bot', { answer: item.a, link: relatedGuideLink(item.q, item.category) }),
         mk('bot', { text: CONFIRM.more }),
-        mk('chips'),
+        mk('chips', { showFinish: true }),
       ]
     )
   }, [respond])
@@ -203,7 +208,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
         [
           mk('bot', { answer: item.tldr || item.q, link: { label: GUIDE_LINK_LABEL, url: item.url } }),
           mk('bot', { text: CONFIRM.more }),
-          mk('chips'),
+          mk('chips', { showFinish: true }),
         ]
       )
       return
@@ -222,7 +227,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
         [
           mk('bot', { answer: answerText(hit.item), link: relatedGuideLink(query, hit.item.category) }),
           mk('bot', { text: CONFIRM.more }),
-          mk('chips'),
+          mk('chips', { showFinish: true }),
         ]
       )
       return
@@ -234,7 +239,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
         [
           mk('bot', { answer: faq.a, link: relatedGuideLink(query, faq.category) }),
           mk('bot', { text: CONFIRM.more }),
-          mk('chips'),
+          mk('chips', { showFinish: true }),
         ]
       )
       return
@@ -276,7 +281,23 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       ...prev.map((m) => (m.id === id ? { ...m, done: true, submittedText, submittedFiles } : m)),
     ])
     clearForm()
-    respond([], [mk('bot', { text: CONFIRM.done }), mk('bot', { text: CONFIRM.more }), mk('chips')])
+    // 접수 확인 → 문의 처리 현황(Stepper)으로 진행 단계 안내 → 대화 마치기 칩
+    const now = new Date()
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    respond([], [
+      mk('bot', { text: CONFIRM.done }),
+      mk('stepper', {
+        title: '문의 처리 현황',
+        current: 1, // 접수 완료 → 담당 배정(진행 중)
+        steps: [
+          { label: '접수 완료', meta: hhmm },
+          { label: '담당 배정' },
+          { label: '처리 중' },
+          { label: '처리 완료' },
+        ],
+      }),
+      mk('chips', { showFinish: true }),
+    ])
   }, [activeForm, formText, formFiles, clearForm, respond])
 
   const cancelForm = useCallback(() => {
@@ -285,6 +306,29 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     setMessages((prev) => prev.filter((m) => m.id !== id))
     clearForm()
   }, [activeForm, clearForm])
+
+  // ─── 대화 마치기 — 문의 처리 완료 요약 + 만족도(CSAT) 카드 ─────────────────
+  // 요약 토픽은 현재 스레드의 사용자 발화에서 추출(중복 제거 후 최근 3개).
+  const finishConversation = useCallback(() => {
+    setMessages((prev) => {
+      const topics = [...new Set(
+        prev.filter((m) => m.type === 'user').map((m) => m.text)
+          .filter((t) => t && t !== FINISH_REPLY)
+      )].slice(-3)
+      return [...prev, mk('user', { text: FINISH_REPLY }), mk('closing', { topics })]
+    })
+  }, [])
+
+  // ─── 만족도(CSAT) 점수 처리 — 1~2점이면 해결방법요청(플서실 연결) 재안내 ──
+  const rateSatisfaction = useCallback((score) => {
+    // TODO: Supabase에 CSAT 저장 — chatbot_csat.insert({ score, context_key, ts })
+    if (score <= 2) {
+      respond([], [
+        mk('bot', { text: '불편을 드려 죄송해요.\n더 정확한 도움이 필요하시면 아래에서 해결방법을 요청해 주세요.' }),
+        mk('chips'),
+      ], 500)
+    }
+  }, [respond])
 
   // ─── 단축키 ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -318,6 +362,8 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     open, close, toggle, reset,
     pickChip, openCategory, pickQa, requestSolution, startError, openGuide,
     search, faqSuggestions, popularSuggestions, pickSuggestion, submitForm, cancelForm, markVisited,
+    // v6 신규 — 문의 처리 완료(종료 요약 + CSAT 만족도). 처리 현황 Stepper는 submitForm에서 노출.
+    finishConversation, rateSatisfaction,
   }
 }
 

@@ -54,8 +54,8 @@ useGuideFilter 훅을 통해 상태 관리.
 
 ```bash
 # 저장소 클론
-git clone https://github.com/layr8x/ams-wiki.git
-cd ams-wiki
+git clone https://github.com/layr8x/sdij-wiki.git
+cd sdij-wiki
 
 # 의존성 설치
 npm install

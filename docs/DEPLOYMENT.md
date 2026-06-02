@@ -17,8 +17,8 @@
 
 1. **저장소 복제**
    ```bash
-   git clone https://github.com/layr8x/ams-wiki.git
-   cd ams-wiki
+   git clone https://github.com/layr8x/sdij-wiki.git
+   cd sdij-wiki
    ```
 
 2. **의존성 설치**
@@ -55,14 +55,14 @@
 1. **GitHub 저장소를 Vercel에 연결**
    - https://vercel.com으로 이동
    - "New Project" 클릭
-   - GitHub 저장소 선택 (layr8x/ams-wiki)
+   - GitHub 저장소 선택 (layr8x/sdij-wiki)
    - 프로젝트 설정 구성:
      - Framework: Vite
      - Build command: `npm run build`
      - Output directory: `dist`
 
 2. **Vercel에서 환경 변수 설정**
-   - Vercel의 프로젝트로 이동: https://vercel.com/layr8xs-projects/ams-wiki
+   - Vercel의 프로젝트로 이동: https://vercel.com/layr8xs-projects/sdij-wiki
    - "Settings" → "Environment Variables" 클릭
    - 다음 환경 변수 추가:
      - **Name**: `VITE_CONFLUENCE_EMAIL` | **Value**: 귀하의 Atlassian 이메일 (예: your-email@hiconsy.com)

@@ -23,7 +23,9 @@ export const T = {
   border: 'rgba(22,22,22,0.08)', // border/primary
   borderStrong: 'rgba(22,22,22,0.24)', // border/secondary — 취소 버튼 · 칩 테두리
   disabled: 'rgba(22,22,22,0.08)', // button/disabled
-  error: '#DA1E28', // text/error — 오류신고 칩
+  error: '#DA1E28', // text/error — 오류신고 칩 · 음성 입력(녹음 중)
+  success: '#24A148', // support/success — 처리 완료 체크(v6 처리현황·종료요약)
+  csatStar: '#F1C21B', // support/warning — CSAT 별점(채워진 별)
   link: '#003CE0', // link/enabled
   noticeBg: '#EDF5FF', // tag/blue/background — 공지 카드
   noticeBorder: '#D0E2FF', // tag/blue/border — 공지 카드 · 파랑 칩

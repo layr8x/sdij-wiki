@@ -148,8 +148,10 @@ docs/                   # 설계·운영·연동 문서 (아래 색인)
 - [KAKAO_PARTNER_SETUP](./docs/KAKAO_PARTNER_SETUP.md) — 카카오 상담 수집
 - [scripts/README-kakao-sync](./scripts/README-kakao-sync.md) — 수집 스크립트 사용법
 
-### 설계 / 분석
+### 설계 / 명세 / 분석
 - [chatbot-design](./docs/chatbot-design.md) — 챗봇 설계
+- [서비스 기능 정의서](./docs/AMS_Wiki_서비스기능정의서.md) — 서비스 기능 명세
+- [상세 기능정의서 (SRS)](./docs/상세기능정의서.md) — 요구사항 명세
 - [ams-wiki-roadmap](./docs/ams-wiki-roadmap.md) — 로드맵
 - [manager-inquiries-analysis](./docs/manager-inquiries-analysis.md) — 실장 문의 분석
 

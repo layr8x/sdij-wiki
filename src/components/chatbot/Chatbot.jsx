@@ -98,19 +98,35 @@ function WidgetHeader() {
   )
 }
 
+// 답변 가독성(텍스트 구성): 빈 줄로 블록 분리 + 리스트/주의(①②③·-·※·🔗) 행은
+// "행걸이 들여쓰기"로 줄바꿈된 이어지는 본문이 마커 아래가 아닌 텍스트 아래로 정렬되게 한다.
+// 리스트 블록은 항목 사이 4px로 살짝 띄워 한눈에 들어오게 — 폰트·색·크기·말풍선 등
+// 디자인 토큰은 그대로 두고 "구성(레이아웃)"만 다듬는다.
+const HANG = /^\s*(?:[①-⑳]|\d+[.)]|[-•‣]|※|🔗)\s*/
+function answerBlocks(body) {
+  return String(body || '').split(/\n{2,}/).map((block) => {
+    const lines = block.split('\n')
+    return { lines, list: lines.some((l) => HANG.test(l)) }
+  })
+}
+
 // ─── 봇 말풍선 (말풍선형 모서리 · 본문 Regular 20/32 · 관련 가이드 링크) ──
 // 시안(Figma 871:26431) 그대로: 본문은 전부 Pretendard Regular 20/32 #161616,
 // 줄바꿈은 pre-wrap 으로 보존. 본문과 링크 사이 간격 24px. 링크는 회색 박스
 // (bg #F4F4F4, rounded-16, "관련 가이드 보기" 가운데 + open_in_new 아이콘).
 function BotBubble({ text, answer, link, onOpen }) {
   const body = answer || text
-  const paras = String(body || '').split(/\n{2,}/) // 시안: 본문 다단락(gap-12)
+  const paras = answerBlocks(body) // 가독성: 블록(빈 줄)별 분리 + 리스트 행걸이 들여쓰기
   return (
     <div className="flex justify-start w-full animate-in fade-in slide-in-from-bottom-3 slide-in-from-left-1 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
       <div className={`flex flex-col gap-[24px] px-[16px] ${link ? 'pt-[12px] pb-[16px]' : 'py-[12px]'} max-w-[400px] overflow-hidden`} style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
         <div className="flex flex-col gap-[12px] w-full">
-          {paras.map((p, i) => (
-            <p key={i} className="w-full break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{p}</p>
+          {paras.map((blk, bi) => (
+            <div key={bi} className={`flex flex-col w-full ${blk.list ? 'gap-[4px]' : ''}`}>
+              {blk.lines.map((line, li) => (
+                <p key={li} className="w-full break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink, ...(HANG.test(line) ? { paddingInlineStart: '1.5em', textIndent: '-1.5em' } : null) }}>{line}</p>
+              ))}
+            </div>
           ))}
         </div>
         {link && (

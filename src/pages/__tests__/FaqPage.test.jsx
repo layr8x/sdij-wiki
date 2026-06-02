@@ -35,7 +35,7 @@ describe('FaqPage', () => {
   it('카테고리 필터 클릭 시 해당 카테고리 FAQ 만 표시된다', () => {
     renderPage()
     // 첫 번째 pill 이 카테고리 필터 (두 번째부터는 FAQ 배지)
-    const pill = screen.getAllByRole('button', { name: /수업 운영/ })[0]
+    const pill = screen.getAllByRole('button', { name: /출결.배부/ })[0]
     fireEvent.click(pill)
     expect(pill.className).toMatch(/bg-foreground/)
   })

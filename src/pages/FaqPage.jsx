@@ -18,10 +18,9 @@ import { MANAGER_FAQ as FAQ_DATA } from '@/data/managerFaq'
 export default function FaqPage() {
   const [category, setCategory] = useState('전체')
 
-  const categories = useMemo(
-    () => ['전체', ...new Set(FAQ_DATA.map(f => f.category))],
-    []
-  )
+  // 챗봇 대메뉴(CHIP_MENU) 7개와 동일한 분류 체계로 통일
+  const FAQ_CATEGORIES = ['OKTA', '강좌/영상/교재', '입퇴반/대기', '결제/환불', '출결/배부', '회원', '오류신고']
+  const categories = ['전체', ...FAQ_CATEGORIES]
 
   const filtered = useMemo(
     () => category === '전체' ? FAQ_DATA : FAQ_DATA.filter(f => f.category === category),
@@ -66,6 +65,9 @@ export default function FaqPage() {
 
       {/* Accordion */}
       <div className="rounded-lg border bg-card px-4 sm:px-6">
+        {filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">아직 이 분류에 등록된 FAQ가 없습니다.</p>
+        ) : (
         <Accordion type="single" collapsible className="w-full">
           {filtered.map((item, i) => (
             <AccordionItem key={`${category}-${i}`} value={`item-${i}`}>
@@ -91,6 +93,7 @@ export default function FaqPage() {
             </AccordionItem>
           ))}
         </Accordion>
+        )}
       </div>
     </PageShell>
   )

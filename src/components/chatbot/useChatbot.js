@@ -35,6 +35,8 @@ import {
 const ONBOARDING_DONE_KEY = 'ams-wiki-chatbot-onboarded-v1'
 // Conversation memory 보존 메시지 수
 const MEMORY_WINDOW = 5
+// '대화 마치기' quick-reply 토큰 — sendQuickReply에서 가로채 finishConversation 호출
+const FINISH_REPLY = '대화 마치기 ✓'
 
 /**
  * 챗봇 단계 (위클리 4단계 로드맵 — 컨플 2072379811)
@@ -64,6 +66,8 @@ const MSG_TYPES = {
   BOT_MENU_PATH: 'bot-menu-path',           // v5: AMS 메뉴 경로 카드
   BOT_RELATED_GUIDES: 'bot-related-guides', // v5+: FVSOL/AMS 컨플 가이드 자동 인용
   BOT_CONTEXTUAL_HINT: 'bot-contextual-hint', // v5+: 시간/시즌/매니저 컨텍스트 힌트
+  BOT_STEPPER: 'bot-stepper',               // v6: 문의 처리 현황 — 플서실 요청 티켓 진행 단계
+  BOT_CLOSING: 'bot-closing',               // v6: 문의 처리 완료 — 요약 + 만족도(CSAT)
   USER_TEXT: 'user-text',
   QUICK_REPLIES: 'quick-replies',
   FEEDBACK: 'feedback',
@@ -158,6 +162,7 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
   const reset = useCallback(() => {
     setMessages([])
     conversationStarted.current = false
+    userHistoryRef.current = [] // 새 대화 → 대화 기억(메모리)도 초기화
     startConversation()
   }, [startConversation])
 
@@ -395,10 +400,26 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
     }, 1200)
   }, [addMessage, removeMessage, generateResponse])
 
+  // === 대화 마치기 — 문의 처리 완료 + 만족도(CSAT) 카드 ===
+  const finishConversation = useCallback(() => {
+    // 대화 메모리에서 실제 질문 토픽 추출 (중복 제거 후 최근 3개)
+    const topics = [...new Set(
+      userHistoryRef.current.map(h => h.text).filter(t => t && t !== FINISH_REPLY)
+    )].slice(-3)
+    addMessage({
+      type: MSG_TYPES.BOT_CLOSING,
+      topics,
+    })
+  }, [addMessage])
+
   // === Quick Reply 클릭 ===
   const sendQuickReply = useCallback((text) => {
+    if (text === FINISH_REPLY) {
+      finishConversation()
+      return
+    }
     sendUserMessage(text)
-  }, [sendUserMessage])
+  }, [sendUserMessage, finishConversation])
 
   // === 피드백 ===
   const submitFeedback = useCallback((intentId, helpful) => {
@@ -413,6 +434,16 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
         reason: 'negative-feedback',
         intentId,
       })
+    } else {
+      // 👍 → 마무리 유도 (다른 질문 입력 or 대화 마치기 → CSAT)
+      addMessage({
+        type: MSG_TYPES.BOT_TEXT,
+        html: '도움이 됐다니 좋아요 😊<br>더 궁금한 점은 아래에 입력해 주세요.',
+      })
+      addMessage({
+        type: MSG_TYPES.QUICK_REPLIES,
+        replies: [FINISH_REPLY],
+      })
     }
     // TODO: Supabase에 피드백 로그 저장
     // await supabase.from('chatbot_feedback').insert({ intent_id, helpful, user_id })
@@ -420,6 +451,10 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
 
   // === 에스컬레이션 (Slack 또는 게시판) ===
   const escalate = useCallback((query, target = 'slack') => {
+    // 현재 시각 (접수 단계 타임스탬프)
+    const now = new Date()
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
     if (target === 'slack') {
       addMessage({
         type: MSG_TYPES.BOT_TEXT,
@@ -432,6 +467,37 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
         html: '✓ <b>티켓 #4521</b>로 AMS 게시판에 등록했어요.',
       })
       // TODO: Supabase board.insert
+    }
+
+    // ① 처리 현황 Stepper — 플서실 요청 티켓의 진행 단계를 시각화
+    addMessage({
+      type: MSG_TYPES.BOT_STEPPER,
+      title: '문의 처리 현황',
+      current: 1, // 접수 완료 → 담당 배정(진행 중)
+      steps: [
+        { label: '접수 완료', meta: hhmm },
+        { label: '담당 배정' },
+        { label: '처리 중' },
+        { label: '처리 완료' },
+      ],
+    })
+  }, [addMessage])
+
+  // === 만족도(CSAT) 점수 처리 ===
+  const rateSatisfaction = useCallback((score) => {
+    // TODO: Supabase에 CSAT 저장 — chatbot_csat.insert({ score, context_key, ts })
+    // 낮은 점수(1~2점)면 사람 연결을 한 번 더 권유
+    if (score <= 2) {
+      setTimeout(() => {
+        addMessage({
+          type: MSG_TYPES.BOT_TEXT,
+          html: '불편을 드려 죄송해요. 더 정확한 도움이 필요하시면 아래로 연결해드릴게요.',
+        })
+        addMessage({
+          type: MSG_TYPES.BOT_ESCALATION,
+          reason: 'negative-feedback',
+        })
+      }, 500)
     }
   }, [addMessage])
 
@@ -465,6 +531,9 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
     submitFeedback,
     escalate,
     contextKey,
+    // v6 신규 — 문의 처리 현황 / 종료·요약·만족도
+    finishConversation,
+    rateSatisfaction,
     // v4 신규 export
     needsOnboarding,
     completeOnboarding,

@@ -104,13 +104,18 @@ function WidgetHeader() {
 // (bg #F4F4F4, rounded-16, "관련 가이드 보기" 가운데 + open_in_new 아이콘).
 function BotBubble({ text, answer, link, onOpen }) {
   const body = answer || text
+  const paras = String(body || '').split(/\n{2,}/) // 시안: 본문 다단락(gap-12)
   return (
     <div className="flex justify-start w-full animate-in fade-in slide-in-from-bottom-3 slide-in-from-left-1 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-      <div className="flex flex-col gap-[24px] p-[16px] max-w-[400px] overflow-hidden" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
-        <p className="w-full break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{body}</p>
+      <div className={`flex flex-col gap-[24px] px-[16px] ${link ? 'pt-[12px] pb-[16px]' : 'py-[12px]'} max-w-[400px] overflow-hidden`} style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
+        <div className="flex flex-col gap-[12px] w-full">
+          {paras.map((p, i) => (
+            <p key={i} className="w-full break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.ink }}>{p}</p>
+          ))}
+        </div>
         {link && (
-          <button type="button" onClick={() => onOpen?.(link.url)} className="group w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[16px] transition-[filter,transform] duration-150 hover:brightness-[0.97] active:scale-[0.99]" style={{ backgroundColor: T.bg }}>
-            <span className="flex-1 text-center" style={{ ...FONT.bodyL, color: T.ink }}>{link.label}</span>
+          <button type="button" onClick={() => onOpen?.(link.url)} className="group w-full flex items-center gap-[8px] px-[16px] py-[12px] rounded-[16px] transition-[filter,transform] duration-150 hover:brightness-[0.97] active:scale-[0.99]" style={{ backgroundColor: T.bg }}>
+            <span className="flex-1 text-center" style={{ ...FONT.bodyLBold, color: T.ink }}>{link.label}</span>
             <MIcon name="open_in_new" size={24} color={T.ink} className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" />
           </button>
         )}
@@ -122,7 +127,7 @@ function BotBubble({ text, answer, link, onOpen }) {
 function UserBubble({ text }) {
   return (
     <div className="flex justify-end w-full animate-in fade-in slide-in-from-right-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-      <div className="p-[16px] max-w-[400px] overflow-hidden" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}`, borderRadius: R_USER }}>
+      <div className="px-[16px] py-[12px] max-w-[400px] overflow-hidden" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}`, borderRadius: R_USER }}>
         <p className="break-words [overflow-wrap:anywhere] whitespace-pre-wrap" style={{ ...FONT.bodyL, color: T.brandBlue }}>{text}</p>
       </div>
     </div>
@@ -137,7 +142,7 @@ function TypingIndicator() {
         @keyframes ams-typing{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-4px);opacity:1}}
         @media(prefers-reduced-motion:reduce){.ams-typing-dot{animation:none!important;opacity:.6}}
       `}</style>
-      <div className="inline-flex items-center gap-[6px] px-[16px] py-[16px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
+      <div className="inline-flex items-center gap-[6px] px-[16px] py-[12px]" style={{ backgroundColor: T.white, border: `1px solid ${T.border}`, borderRadius: R_BOT }}>
         {[0, 1, 2].map((i) => (
           <span key={i} className="ams-typing-dot h-2 w-2 rounded-full" style={{ backgroundColor: T.helper, animation: `ams-typing 1s ${i * 0.15}s infinite ease-in-out` }} />
         ))}
@@ -146,7 +151,7 @@ function TypingIndicator() {
   )
 }
 
-// ─── 칩 메뉴 (회색 테두리 · 검정/빨강 텍스트 · Regular) ───────────────────
+// ─── 칩 메뉴 (회색 테두리 · 검정/빨강 텍스트 · SemiBold 20/32) ────────────
 function Chip({ label, variant, index = 0, onClick }) {
   const [hover, setHover] = useState(false)
   const red = variant === 'red'
@@ -159,7 +164,7 @@ function Chip({ label, variant, index = 0, onClick }) {
       className="px-[20px] py-[8px] rounded-[24px] transition-[transform,box-shadow,background-color] duration-150 ease-out motion-reduce:transition-none hover:-translate-y-px active:scale-95 animate-in fade-in zoom-in-95 fill-mode-both"
       style={{ backgroundColor: hover ? '#FAFAFA' : T.white, border: `1px solid ${T.borderStrong}`, boxShadow: hover ? '0 6px 16px rgba(0,67,206,0.10)' : T.shadowS, animationDuration: '280ms', animationDelay: `${index * 45}ms` }}
     >
-      <span style={{ ...FONT.bodyL, color: red ? T.error : T.ink }}>{label}</span>
+      <span style={{ ...FONT.bodyLBold, color: red ? T.error : T.ink }}>{label}</span>
     </button>
   )
 }
@@ -183,7 +188,7 @@ function FaqRow({ children, onClick, isLink, last }) {
       className="group w-full flex items-center gap-[16px] p-[16px] text-left transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[#F7FAFF] active:bg-[#EDF5FF] active:scale-[0.99]"
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
-      <span className="flex-1 min-w-0 break-words" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>{children}</span>
+      <span className="flex-1 min-w-0 break-words" style={{ ...FONT.bodyLBold, color: isLink ? T.link : T.navy }}>{children}</span>
       <MIcon name="open_in_new" size={24} color={isLink ? T.link : T.placeholder} className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" style={isLink ? { opacity: 0.4 } : undefined} />
     </button>
   )
@@ -192,11 +197,11 @@ function FaqRow({ children, onClick, isLink, last }) {
 function FaqList({ categoryId, items, onPickQa, onRequestSolution, onOpenGuide }) {
   const label = getCategoryLabel(categoryId)
   return (
-    <div className="shrink-0 rounded-[8px] overflow-hidden w-full animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ border: `1px solid ${T.border}` }}>
+    <div className="shrink-0 rounded-[8px] overflow-hidden w-full max-w-[400px] animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ border: `1px solid ${T.border}` }}>
       {items.map((qa) => (
         <FaqRow key={qa.id} onClick={() => onPickQa(qa)}>{qa.q.replace(/[?？]\s*$/, '')}?</FaqRow>
       ))}
-      <FaqRow onClick={onRequestSolution}>해결방법 요청하기</FaqRow>
+      <FaqRow onClick={onRequestSolution}>관련된 가이드를 찾을 수 없습니다.</FaqRow>
       <FaqRow isLink last onClick={() => onOpenGuide(guideSearchUrl(label))}>{label} 가이드 보기</FaqRow>
     </div>
   )
@@ -259,12 +264,12 @@ function InlineForm({ m, chatbot }) {
   const isActive = chatbot.activeForm?.id === m.id && !m.done
   useEffect(() => { if (isActive) textareaRef.current?.focus() }, [isActive])
   const copy = FORM_COPY[m.kind] || FORM_COPY.solution
-  const helper = <p style={{ ...FONT.bodyM, color: T.helper }}>이미지만 첨부 가능 / 최대 2개 / 각 1MB 이하</p>
+  const helper = <p style={{ ...FONT.caption, color: T.helper }}>이미지만 첨부 가능 / 최대 2개 / 각 1MB 이하</p>
 
   if (m.done) {
     // 접수완료(읽기전용) — 시안 871:26366: 회색 텍스트박스(160·흐린글씨) + 회색 첨부칩, 안내문구 없음
     return (
-      <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
+      <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] ml-auto w-[400px] max-w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
         <div className="w-full rounded-[4px] p-[16px] overflow-y-auto" style={{ height: 160, backgroundColor: T.bg, border: `1px solid ${T.border}` }}>
           <p className="whitespace-pre-wrap break-words" style={{ ...FONT.bodyL, color: T.inkSecondary }}>{m.submittedText}</p>
         </div>
@@ -275,7 +280,7 @@ function InlineForm({ m, chatbot }) {
   if (!isActive) return null
 
   return (
-    <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
+    <div className="flex flex-col gap-[8px] p-[8px] rounded-[8px] ml-auto w-[400px] max-w-full" style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}` }}>
       <textarea
         ref={textareaRef}
         value={chatbot.formText}
@@ -293,7 +298,7 @@ function InlineForm({ m, chatbot }) {
       )}
       <input ref={fileRef} type="file" accept={ATTACH_LIMIT.accept} multiple hidden onChange={(e) => chatbot.addFiles(e.target.files)} />
       {helper}
-      {chatbot.fileError && <p style={{ ...FONT.bodyM, color: T.error }}>{chatbot.fileError}</p>}
+      {chatbot.fileError && <p style={{ ...FONT.caption, color: T.error }}>{chatbot.fileError}</p>}
     </div>
   )
 }
@@ -301,7 +306,7 @@ function InlineForm({ m, chatbot }) {
 // ─── 하단 고정바: 취소 / 보내기 ──────────────────────────────────────────
 function FormActionBar({ canSubmit, onCancel, onSubmit }) {
   return (
-    <div className="shrink-0 flex items-center justify-between px-[16px] py-[16px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
+    <div className="shrink-0 flex items-center justify-between px-[16px] py-[12px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
       <button type="button" onClick={onCancel} className="flex items-center justify-center px-[32px] py-[16px] rounded-[32px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[#FAFAFA] active:scale-[0.98]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
         <span style={{ ...BTN, color: T.ink }}>취소</span>
       </button>
@@ -388,7 +393,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
           ))}
         </div>
       )}
-      <div className="p-[16px]">
+      <div className="px-[16px] py-[12px]">
         <form
           onSubmit={(e) => { e.preventDefault(); submit() }}
           className="flex items-center gap-[8px] p-[8px] rounded-[32px]"

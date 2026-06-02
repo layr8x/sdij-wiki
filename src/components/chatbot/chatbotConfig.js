@@ -50,7 +50,7 @@ export const FONT = {
   headlineBold: { fontSize: '20px', lineHeight: '32px', fontWeight: 600, ...ss },
   bodyM: { fontSize: '16px', lineHeight: '28px', fontWeight: 400, ...ss }, // body-m
   bodyMBold: { fontSize: '16px', lineHeight: '28px', fontWeight: 600, ...ss },
-  caption: { fontSize: '14px', lineHeight: '24px', fontWeight: 600, ...ss }, // caption-l (BETA)
+  caption: { fontSize: '14px', lineHeight: '24px', fontWeight: 400, ...ss }, // caption-l — 폼 안내문구(첨부 제약)
 }
 
 // ─── 공지 카드 ───────────────────────────────────────────────────────────

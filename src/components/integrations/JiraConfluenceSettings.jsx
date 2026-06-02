@@ -15,37 +15,33 @@ export function JiraConfluenceSettings() {
   const [error, setError] = useState(null)
 
   // 현재 사용자 및 통합 로드
-  const loadData = useCallback(async () => {
-    try {
-      // loading 초기값이 true 라 mount 시점 setLoading(true) 는 불필요
-      // (effect 내 동기 setState 경고 회피).
-      const { data: sessionData, error: authError } = await supabase.auth.getSession()
-
-      if (authError || !sessionData.session) {
-        setError('로그인이 필요합니다')
-        return
-      }
-
-      // OAuth 통합 조회
-      const { data, error: dbError } = await supabase
-        .from('oauth_integrations')
-        .select('*')
-        .eq('user_id', sessionData.session.user.id)
-
-      if (dbError) throw dbError
-      setIntegrations(data || [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    // mount 시 1회 비동기 데이터 페치 — setState 는 모두 await 이후 발생.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    async function loadData() {
+      try {
+        setLoading(true)
+        const { data: sessionData, error: authError } = await supabase.auth.getSession()
+
+        if (authError || !sessionData.session) {
+          setError('로그인이 필요합니다')
+          return
+        }
+
+        // OAuth 통합 조회
+        const { data, error: dbError } = await supabase
+          .from('oauth_integrations')
+          .select('*')
+          .eq('user_id', sessionData.session.user.id)
+
+        if (dbError) throw dbError
+        setIntegrations(data || [])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadData()
-  }, [loadData])
+  }, [])
 
   // OAuth 연결 시작
   async function startConnect() {

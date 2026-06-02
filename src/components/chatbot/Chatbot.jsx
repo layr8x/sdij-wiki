@@ -6,7 +6,23 @@
 // 토큰: 배경 #F4F4F4 · 헤더 "AMS 챗봇" · 유저 말풍선 연한파랑 #EDF5FF/글씨 #0043CE
 //       · body 20/32 · 봇 말풍선/입력 4px · 칩 pill · 폼 입력 #EDF5FF 패널 · 폭 512.
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import {
+  ChatCircleText,
+  X,
+  ArrowsClockwise,
+  ArrowUp,
+  ThumbsUp,
+  ThumbsDown,
+  Warning,
+  Lightbulb,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  ArrowSquareOut,
+  Microphone,
+  Star,
+} from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useManagerFaq } from '@/hooks/useManagerFaq'
 import { useChatbot, MSG_TYPES } from './useChatbot'
@@ -319,8 +335,143 @@ function InlineForm({ m, chatbot }) {
   )
 }
 
-// ─── 하단 고정바: 취소 / 보내기 ──────────────────────────────────────────
-function FormActionBar({ canSubmit, onCancel, onSubmit }) {
+// ─── Status Stepper (v6: 문의 처리 현황 — 플서실 요청 티켓 진행 단계) ──────
+// 세로 타임라인. current = 진행 중 단계 index (이전=완료 ✓, 이후=대기 ○).
+function StatusStepper({ title = '문의 처리 현황', steps = [], current = 0 }) {
+  if (!steps.length) return null
+  return (
+    <div className="rounded-[4px] bg-white px-4 py-3.5" style={{ border: `1px solid ${CHATBOT_BORDER}` }}>
+      <div className="text-[10.5px] font-semibold tracking-wider mb-3" style={{ color: CHATBOT_POINT }}>
+        🧭 {title}
+      </div>
+      <ol className="relative">
+        {steps.map((step, i) => {
+          const done = i < current
+          const active = i === current
+          const isLast = i === steps.length - 1
+          const labelColor = done || active ? CHATBOT_BRAND : CHATBOT_HELPER
+          return (
+            <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
+              {/* 연결선 */}
+              {!isLast && (
+                <span
+                  className="absolute left-[11px] top-6 -bottom-0.5 w-px"
+                  style={{ backgroundColor: done ? CHATBOT_SUCCESS : CHATBOT_BORDER_STRONG }}
+                  aria-hidden
+                />
+              )}
+              {/* 노드 */}
+              <span className="relative shrink-0 flex items-center justify-center mt-0.5" style={{ width: 23, height: 23 }}>
+                {done ? (
+                  <CheckCircle size={23} weight="fill" style={{ color: CHATBOT_SUCCESS }} />
+                ) : active ? (
+                  <>
+                    <span className="absolute h-5 w-5 rounded-full opacity-20 animate-ping" style={{ backgroundColor: CHATBOT_POINT }} aria-hidden />
+                    <span className="relative h-3.5 w-3.5 rounded-full" style={{ backgroundColor: CHATBOT_POINT, boxShadow: `0 0 0 3px ${CHATBOT_TAG_BLUE_BG}` }} />
+                  </>
+                ) : (
+                  <span className="h-3.5 w-3.5 rounded-full border-2 bg-white" style={{ borderColor: CHATBOT_BORDER_STRONG }} />
+                )}
+              </span>
+              {/* 라벨 + 상태 */}
+              <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+                <span className="text-[14px] leading-snug" style={{ color: labelColor, fontWeight: active ? 600 : done ? 500 : 400 }}>
+                  {step.label}
+                </span>
+                <span className="text-[11px] shrink-0 tabular-nums" style={{ color: active ? CHATBOT_POINT : CHATBOT_PLACEHOLDER }}>
+                  {active ? '진행 중' : done ? (step.meta || '완료') : '대기'}
+                </span>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
+// ─── Closing Summary + CSAT (v6: 문의 처리 완료 — 요약 + 만족도) ──────────
+// '상담 종료'(상담원 연결)가 아니라 셀프서비스 마무리이므로 '문의 처리 완료' 표현 사용.
+function ClosingSummaryCard({ topics = [], onRate }) {
+  const [rated, setRated] = useState(0)
+  const [hover, setHover] = useState(0)
+  const [done, setDone] = useState(false)
+
+  const handleRate = (score) => {
+    if (done) return
+    setRated(score)
+    setDone(true)
+    onRate?.(score)
+  }
+
+  return (
+    <div className="rounded-[4px] overflow-hidden bg-white" style={{ border: `1px solid ${CHATBOT_BORDER}`, borderTop: `3px solid ${CHATBOT_SUCCESS}` }}>
+      {/* 헤더 */}
+      <div className="flex items-center gap-2 px-4 pt-3.5 pb-2">
+        <CheckCircle size={22} weight="fill" style={{ color: CHATBOT_SUCCESS }} />
+        <span className="text-[15px] font-semibold" style={{ color: CHATBOT_BRAND }}>문의 처리 완료</span>
+      </div>
+
+      {/* 요약 */}
+      {topics.length > 0 && (
+        <div className="px-4 pb-3">
+          <div className="text-[12px] mb-1.5" style={{ color: CHATBOT_HELPER }}>오늘 이런 걸 도와드렸어요</div>
+          <ul className="space-y-1">
+            {topics.map((t, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[13.5px] leading-snug" style={{ color: CHATBOT_BRAND }}>
+                <CheckCircle size={16} weight="fill" className="shrink-0 mt-0.5" style={{ color: CHATBOT_SUCCESS }} />
+                <span className="truncate">{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* CSAT 만족도 */}
+      <div className="px-4 py-3.5" style={{ backgroundColor: CHATBOT_TAG_BLUE_BG, borderTop: `1px solid ${CHATBOT_BORDER}` }}>
+        {!done ? (
+          <>
+            <div className="text-[13.5px] font-medium text-center mb-2.5" style={{ color: CHATBOT_BRAND }}>
+              오늘 도움이 어떠셨나요?
+            </div>
+            <div className="flex items-center justify-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleRate(s)}
+                  onMouseEnter={() => setHover(s)}
+                  onMouseLeave={() => setHover(0)}
+                  aria-label={`만족도 ${s}점`}
+                  className="transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 rounded-full"
+                >
+                  <Star
+                    size={30}
+                    weight={(hover || rated) >= s ? 'fill' : 'regular'}
+                    style={{ color: (hover || rated) >= s ? CHATBOT_WARN_BAR : CHATBOT_BORDER_STRONG }}
+                  />
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center gap-1.5 text-[14px] font-medium py-1" style={{ color: CHATBOT_SUCCESS }}>
+            <CheckCircle size={20} weight="fill" />
+            평가 감사합니다! 🙏
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Feedback ───────────────────────────────────────────────────────────
+function FeedbackRow({ onSubmit }) {
+  const [submitted, setSubmitted] = useState(null)
+  const handle = (helpful) => {
+    setSubmitted(helpful)
+    onSubmit?.(helpful)
+  }
   return (
     <div className="shrink-0 flex items-center justify-between px-[16px] py-[12px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
       <button type="button" onClick={onCancel} className="flex items-center justify-center px-[32px] py-[16px] rounded-[32px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[#FAFAFA] active:scale-[0.98]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
@@ -334,12 +485,115 @@ function FormActionBar({ canSubmit, onCancel, onSubmit }) {
   )
 }
 
-// 자동완성에서 일치 부분 강조
-function highlightMatch(text, q) {
-  const query = (q || '').trim()
-  if (!query) return text
-  const i = text.toLowerCase().indexOf(query.toLowerCase())
-  if (i < 0) return text
+// ─── Input + Autocomplete (Linear AI 패턴) ──────────────────────────────
+function ChatbotInput({ onSend, placeholder }) {
+  const [text, setText] = useState('')
+  const inputRef = useRef(null)
+  const [showSuggestions, setShowSuggestions] = useState(true)
+
+  // v6: 음성으로 묻기 — Web Speech API (브라우저 지원 시에만 노출)
+  const [recording, setRecording] = useState(false)
+  // 지원 여부는 마운트 시 1회 계산 (effect 내 setState 회피)
+  const [voiceSupported] = useState(
+    () => typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+  )
+  const recognitionRef = useRef(null)
+
+  // 언마운트 시 진행 중인 음성 인식 정리
+  useEffect(() => () => { try { recognitionRef.current?.abort?.() } catch { /* noop */ } }, [])
+
+  const toggleVoice = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) return
+    if (recording) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const recognition = new SR()
+    recognition.lang = 'ko-KR'
+    recognition.interimResults = true
+    recognition.continuous = false
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('')
+      setText(transcript)
+      setShowSuggestions(true)
+    }
+    recognition.onerror = () => setRecording(false)
+    recognition.onend = () => setRecording(false)
+    recognitionRef.current = recognition
+    setRecording(true)
+    recognition.start()
+    inputRef.current?.focus()
+  }
+
+  const handleSubmit = (e) => {
+    e?.preventDefault()
+    if (!text.trim()) return
+    recognitionRef.current?.stop()
+    onSend(text)
+    setText('')
+    inputRef.current?.focus()
+  }
+  const handleSuggestionSelect = (suggested) => {
+    setText('')
+    onSend(suggested)
+    setShowSuggestions(false)
+    inputRef.current?.focus()
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="relative border-t border-[#E8E8E8] px-3.5 py-3 bg-background"
+    >
+      {showSuggestions && text.length >= 2 && (
+        <AutocompleteSuggestions
+          query={text}
+          onSelect={handleSuggestionSelect}
+        />
+      )}
+      <div
+        className="flex items-center gap-1.5 h-11 rounded-full border bg-[#F7F7F7] pl-4 pr-1.5 transition-colors focus-within:bg-white"
+        style={{ borderColor: recording ? CHATBOT_ERROR : '#E8E8E8' }}
+      >
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={e => { setText(e.target.value); setShowSuggestions(true) }}
+          onFocus={() => setShowSuggestions(true)}
+          placeholder={recording ? '듣고 있어요… 말씀하세요' : (placeholder || '무엇이든 물어보세요')}
+          className="flex-1 bg-transparent border-0 outline-none text-[13px] text-[#1A1A1A] placeholder:text-[#999999]"
+          autoComplete="off"
+          aria-label="챗봇 질문 입력"
+        />
+        {voiceSupported && (
+          <button
+            type="button"
+            onClick={toggleVoice}
+            aria-label={recording ? '음성 입력 중지' : '음성으로 묻기'}
+            aria-pressed={recording}
+            className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-all hover:bg-black/5"
+            style={recording ? { backgroundColor: CHATBOT_ERROR, color: '#fff' } : { color: CHATBOT_HELPER }}
+          >
+            <Microphone size={18} weight={recording ? 'fill' : 'regular'} className={recording ? 'animate-pulse' : ''} />
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={!text.trim()}
+          aria-label="전송"
+          className="h-8 w-8 rounded-full flex items-center justify-center text-white transition-all disabled:opacity-40 hover:opacity-90 shrink-0"
+          style={{ backgroundColor: CHATBOT_POINT }}
+        >
+          <ArrowUp size={14} weight="bold" />
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ─── Footer ─────────────────────────────────────────────────────────────
+function ChatbotFooter({ contextLabel }) {
   return (
     <>
       {text.slice(0, i)}
@@ -467,10 +721,21 @@ function ThreadMessage({ m, chatbot }) {
           onOpenGuide={chatbot.openGuide}
         />
       )
-    case MSG_TYPES.GUIDE:
-      return <GuideCard guide={m.guide} onOpen={chatbot.openGuide} />
-    case MSG_TYPES.FORM:
-      return <InlineForm m={m} chatbot={chatbot} />
+
+    case MSG_TYPES.BOT_STEPPER:
+      return (
+        <div className="mb-3 max-w-[92%]">
+          <StatusStepper title={msg.title} steps={msg.steps} current={msg.current} />
+        </div>
+      )
+
+    case MSG_TYPES.BOT_CLOSING:
+      return (
+        <div className="mb-3 max-w-[92%]">
+          <ClosingSummaryCard topics={msg.topics} onRate={(s) => chatbot.rateSatisfaction(s)} />
+        </div>
+      )
+
     default:
       return null
   }

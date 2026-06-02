@@ -16,33 +16,32 @@ export function JiraConfluenceSettings() {
 
   // 현재 사용자 및 통합 로드
   useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true)
+        const { data: sessionData, error: authError } = await supabase.auth.getSession()
+
+        if (authError || !sessionData.session) {
+          setError('로그인이 필요합니다')
+          return
+        }
+
+        // OAuth 통합 조회
+        const { data, error: dbError } = await supabase
+          .from('oauth_integrations')
+          .select('*')
+          .eq('user_id', sessionData.session.user.id)
+
+        if (dbError) throw dbError
+        setIntegrations(data || [])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadData()
   }, [])
-
-  async function loadData() {
-    try {
-      setLoading(true)
-      const { data: sessionData, error: authError } = await supabase.auth.getSession()
-
-      if (authError || !sessionData.session) {
-        setError('로그인이 필요합니다')
-        return
-      }
-
-      // OAuth 통합 조회
-      const { data, error: dbError } = await supabase
-        .from('oauth_integrations')
-        .select('*')
-        .eq('user_id', sessionData.session.user.id)
-
-      if (dbError) throw dbError
-      setIntegrations(data || [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // OAuth 연결 시작
   async function startConnect() {

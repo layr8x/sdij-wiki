@@ -1,174 +1,168 @@
-# AMS Wiki
+# AMS Wiki — 학원 운영 통합 플랫폼
 
-학원 운영 시스템(AMS) 가이드 통합 위키. **shadcn/ui + Supabase + Confluence API** 기반의 엔터프라이즈급 지식 베이스.
+학원 운영 시스템(AMS)을 위한 **가이드 위키 · 운영 챗봇 · 카카오 문의/상담 수집·분석**을 한 곳에 모은 사내 플랫폼.
+React 19 + shadcn/ui + Supabase 기반.
+
+> 🔗 **라이브**: https://sdij-wiki.vercel.app
+
+---
+
+## 무엇을 하는 서비스인가
+
+| 영역 | 설명 |
+|------|------|
+| 📚 **가이드 위키** | 학원 운영 매뉴얼·가이드를 직원이 검색·열람하는 지식 베이스 (6개 가이드 유형) |
+| 💬 **운영 챗봇** | 자주 묻는 운영 FAQ를 7개 대메뉴로 안내 + 오류신고·처리현황·음성입력 |
+| 📨 **카카오 문의 수집** | 학부모 카카오톡 문의를 자동 분류해 DB에 적재 (webhook) |
+| 📊 **상담 수집·분석** | 카카오 비즈니스 채팅(학부모↔학원)을 실시간 수집 → 감정·응답시간·카테고리 분석 |
+| 🔗 **외부 연동** | Confluence/Jira OAuth 2.0, 가이드 원본 동기화(Cron) |
+
+---
+
+## 핵심 기능
+
+### 📚 가이드 시스템 (6유형)
+- **SOP** 절차형 단계별 가이드 · **DECISION** 판단분기 테이블 · **REFERENCE** 용어 사전
+- **TROUBLE** 트러블슈팅 · **RESPONSE** CS 대응 스크립트 · **POLICY** 정책 전/후 비교
+
+### 💬 운영 챗봇
+- 챗봇 대메뉴 **7개 분류**(OKTA · 강좌/영상/교재 · 입퇴반/대기 · 결제/환불 · 출결/배부 · 회원 · 오류신고)
+- 분류별 **조회수 TOP FAQ** 노출 + 자유 검색(공식 Q&A · 매니저 FAQ 통합 매칭)
+- 처리 현황 · 종료 요약 · **음성 입력** · 오류신고 폼 · 관련 가이드 딥링크
+- 위키 FAQ 페이지(`/faq`)와 **동일한 데이터·분류**를 공유(단일 원본)
+
+### 📨 카카오 연동 (문의·상담)
+- **Webhook**: 학부모 문의 실시간 수신 → 자동 분류 → Supabase 적재
+- **Partner Stream**: 비즈니스 채팅 실시간 수집 데몬 + 대시보드 스크립트
+- 운영 분석: **감정 추세 · 응답시간 분포 · Claude 기반 카테고리 분류** 차트(Admin)
+
+### 🔐 인증 (Supabase Auth)
+- 구글 OAuth 원클릭 · 이메일/비밀번호 · 역할 기반 권한(OPERATOR/ADMIN/MANAGER/GUEST)
+
+### 🔍 검색 & 네비게이션
+- **⌘K 명령 팔레트** · 동의어 확장 검색 · 자동 목차(On This Page) · 최근/인기 가이드
+
+### 🎨 UI/UX
+- shadcn/ui 표준 컴포넌트 **28개** · 다크모드(`@theme` + `html.dark`) · Pretendard 폰트 · 반응형 · Toast
+
+---
 
 ## 기술 스택
 
-- **프레임워크**: React 19 + Vite 8
-- **UI/디자인**: Tailwind CSS 4 (CSS-first `@theme`) + shadcn/ui 표준
-- **컴포넌트**: 설치 28개 (Accordion, Avatar, Badge, Breadcrumb, Button, Card, Chart, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, ScrollArea, Select, Separator, Sheet, Sidebar, Skeleton, Sonner, Table, Tabs, Textarea, Toast, Toggle, ToggleGroup, Tooltip)
-- **라우팅**: React Router v7
-- **상태 관리**: React Query (TanStack Query)
-- **데이터베이스**: Supabase (PostgreSQL + Auth + Realtime)
-- **외부 연동**: Confluence REST API v2
-- **배포**: Vercel (자동 배포) + GitHub Actions CI/CD
+| 구분 | 사용 기술 |
+|------|-----------|
+| 프레임워크 | React 19 · Vite 8 |
+| 스타일 | Tailwind CSS 4 (CSS-first `@theme`) · shadcn/ui |
+| 라우팅/상태 | React Router 7 · TanStack Query 5 |
+| 데이터 | Supabase (PostgreSQL · Auth · Realtime) |
+| 서버리스 | Vercel Functions (`api/`) · Anthropic API(요약/분류) |
+| 외부 연동 | Confluence REST v2 · Jira/Confluence OAuth 2.0 |
+| 배포/CI | Vercel 자동 배포 · GitHub Actions (`ci` · `codeql` · `deploy`) |
+
+---
 
 ## 빠른 시작
 
-### 1. 로컬 개발 환경
-
 ```bash
-# 의존성 설치
+# 1) 의존성 설치
 npm install
 
-# 환경 변수 설정
+# 2) 환경 변수 (전체 목록·설명은 .env.example 참조)
 cp .env.example .env
-# .env 파일을 열어 Supabase/Confluence 자격증명 입력
 
-# 개발 서버 시작
-npm run dev
+# 3) 개발 서버 (HMR)
+npm run dev          # → http://localhost:5173
 ```
 
-브라우저에서 [http://localhost:5173](http://localhost:5173) 접속.
+> Supabase 미설정 시 `src/data/mockData.js` 로컬 데이터로 자동 폴백되어 바로 실행됩니다.
 
-### 2. Supabase 설정 (선택)
-
-Supabase 미설정 시 `src/data/mockData.js`의 로컬 데이터로 자동 폴백됩니다.
-
-```bash
-# (1) https://supabase.com 에서 프로젝트 생성
-# (2) SQL Editor에 아래 순서로 실행:
-#     - supabase/schema.sql  (테이블·인덱스·RLS 정책)
-#     - supabase/seed.sql    (24개 가이드 시드 데이터)
-# (3) Project Settings > API 에서 URL + anon key 복사하여 .env 에 설정
-
-# (4) 시드 SQL 재생성 (mockData.js 변경 시)
-npm run db:seed
-```
-
-### 3. 사용 가능한 스크립트
+### 사용 가능한 스크립트
 
 | 명령어 | 설명 |
 |--------|------|
-| `npm run dev`       | 개발 서버 시작 (HMR) |
-| `npm run build`     | 프로덕션 빌드 |
-| `npm run preview`   | 빌드 미리보기 |
-| `npm run lint`      | ESLint 실행 |
-| `npm run test`      | Vitest 단위 테스트 |
-| `npm run test:e2e`  | Playwright E2E 테스트 |
-| `npm run db:seed`   | Supabase 시드 SQL 재생성 |
+| `npm run dev` | 개발 서버 시작 (HMR) |
+| `npm run build` | 프로덕션 빌드 |
+| `npm run preview` | 빌드 미리보기 |
+| `npm run lint` | ESLint 검사 |
+| `npm run test` | Vitest 단위 테스트 |
+| `npm run test:e2e` | Playwright E2E 테스트 |
+| `npm run db:seed` | Supabase 시드 SQL 재생성 |
 
-## 주요 기능
-
-### 🎯 가이드 시스템 (6유형)
-- **SOP**: 절차형 단계별 가이드 (이미지 포함)
-- **DECISION**: 판단분기 테이블 (조건/처리/상태)
-- **REFERENCE**: 용어 사전 (검색 가능)
-- **TROUBLE**: 트러블슈팅 (오류/원인/해결/심각도)
-- **RESPONSE**: CS 대응 매뉴얼 스크립트
-- **POLICY**: 정책 변경 전/후 비교
-
-### 🔐 인증 시스템 (Supabase Auth)
-- **구글 OAuth** 원클릭 로그인
-- **이메일/비밀번호** 로그인 + 회원가입
-- 역할 기반 권한 (OPERATOR, ADMIN, MANAGER, GUEST)
-- 세션 자동 동기화
-
-### 📚 Confluence API 연동
-- 페이지 조회/생성/수정
-- 첨부파일 관리 (이미지 업로드)
-- CQL 전문 검색
-- 스페이스 트리 네비게이션
-
-### 🔍 검색 & 네비게이션
-- **⌘K 명령 팔레트** (shadcn/ui Command)
-- 동의어 확장 검색 (예: "병합" → 계정통합)
-- On This Page 자동 목차 (IntersectionObserver)
-- 최근 조회 / 인기 가이드
-
-### 🎨 UI/UX
-- **shadcn/ui 표준** 컴포넌트 28개 설치 (Sidebar/Dashboard 블록 포함; 확장은 `npx shadcn@latest add <name>`)
-- 다크모드 (CSS 변수 기반, `@theme` + `html.dark`)
-- Pretendard 한글 최적화 폰트
-- 반응형 디자인 (모바일·태블릿·데스크톱)
-- Toast 알림
-
-### 📊 통계 & 피드백
-- 조회수 자동 추적 (Supabase RPC)
-- 가이드별 피드백 수집 (도움됨/보완필요)
-- 검색 로그 기록
+---
 
 ## 환경 변수
 
-필수 (Supabase):
-- `VITE_SUPABASE_URL` - Supabase 프로젝트 URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase anon 공개 키
+`.env.example`에 전체 목록과 설명이 있습니다. 주요 그룹만 요약하면:
 
-선택 (Confluence):
-- `VITE_CONFLUENCE_EMAIL` - Atlassian 이메일
-- `VITE_CONFLUENCE_TOKEN` - [API 토큰](https://id.atlassian.com/manage-profile/security/api-tokens)
-- `VITE_CONFLUENCE_DOMAIN` - 도메인 (기본: hiconsy.atlassian.net)
-- `VITE_CONFLUENCE_SPACE_KEY` - 스페이스 키 (기본: FVSOL)
+- **필수** — `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **선택(Confluence)** — `VITE_CONFLUENCE_EMAIL`, `VITE_CONFLUENCE_TOKEN`, `VITE_CONFLUENCE_DOMAIN`, `VITE_CONFLUENCE_SPACE_KEY`
+- **선택(Jira/Confluence OAuth)** — `ATLASSIAN_*` (서버리스 OAuth 콜백용)
+- **선택(카카오/분석)** — Kakao·Supabase service role (수집 스크립트용, 서버 전용)
+- **선택(AI/실시간)** — `ANTHROPIC_API_KEY`(요약·분류), `VITE_MANAGER_FAQ_URL`(FAQ 외부 실시간 소스)
 
-## 컴포넌트 라이브러리
+> ⚠️ service role 등 **서버 전용 키는 `VITE_` 접두사를 붙이지 마세요**(클라이언트에 노출됨).
 
-shadcn/ui 컴포넌트 **28개**가 `src/components/ui/` 에 설치되어 있습니다 (sidebar-07 / dashboard-01 블록 적용 포함). 자주 쓰는 9개는 barrel 익스포트(`@/components/ui`)로, 그 외는 개별 파일에서 직접 import합니다.
-
-```jsx
-// 배럴 익스포트 (Badge, Button, Card, Input, Separator, Skeleton, Table, Textarea, Toast)
-import { Badge, Button, Card, CardHeader, CardContent } from '@/components/ui'
-
-// 개별 import (그 외 19개)
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Sidebar, SidebarContent } from '@/components/ui/sidebar'
-```
-
-설치된 전체 목록: `accordion`, `avatar`, `badge`, `breadcrumb`, `button`, `card`, `chart`, `checkbox`, `collapsible`, `dialog`, `drawer`, `dropdown-menu`, `input`, `label`, `scroll-area`, `select`, `separator`, `sheet`, `sidebar`, `skeleton`, `sonner`, `table`, `tabs`, `textarea`, `toast`, `toggle`, `toggle-group`, `tooltip`.
-
-```bash
-# 새 컴포넌트 추가 (예: calendar, popover, form)
-npx shadcn@latest add calendar popover form
-```
-
-shadcn/ui 전반(철학·CLI·테마·레지스트리·MCP·Tailwind v4)은 [`docs/shadcn-ui/`](./docs/shadcn-ui/README.md) 참조.
+---
 
 ## 프로젝트 구조
 
 ```
 src/
 ├── components/
-│   ├── common/      # Layout, Header, Sidebar, UserMenu 등
-│   ├── search/      # SearchOverlay (⌘K 팔레트)
-│   └── ui/          # shadcn/ui 9개 컴포넌트 (실사용 기반)
-├── pages/           # 8개 페이지 (Home, Guide, List, FAQ, etc.)
-├── hooks/           # useGuides (React Query 훅)
-├── lib/
-│   ├── supabase.js  # Supabase 클라이언트
-│   ├── db.js        # DB 데이터 레이어 (폴백 포함)
-│   ├── confluence.js# Confluence API 클라이언트
-│   └── utils.js     # cn() 등 유틸리티
-├── store/           # AuthStore, SearchStore, I18nStore
-├── data/            # mockData (폴백용)
-└── locales/         # 다국어 (ko.json, en.json)
+│   ├── chatbot/        # 운영 챗봇 (config·hook·UI)
+│   ├── common/         # Layout, Header, Sidebar 등
+│   ├── integrations/   # Jira/Confluence 설정 UI
+│   ├── search/         # ⌘K 명령 팔레트
+│   └── ui/             # shadcn/ui 컴포넌트 28개
+├── pages/              # 라우트 페이지 (Home·Guide·FAQ·Admin 등)
+├── hooks/              # React Query 훅 (useGuides·useManagerFaq 등)
+├── data/               # 가이드·FAQ·분석 시드 데이터 (폴백)
+├── lib/                # supabase·db·confluence·utils
+├── store/              # Auth·Search·I18n 스토어
+└── locales/            # 다국어 (ko·en)
 
-supabase/
-├── schema.sql       # PostgreSQL 테이블·인덱스·RPC·RLS
-├── seed.sql         # 24개 가이드 시드 데이터
-└── generate-seed.mjs # mockData → SQL 자동 생성 스크립트
+api/                    # Vercel 서버리스 함수
+├── confluence/ jira/   # REST 프록시
+├── oauth/              # Atlassian OAuth 2.0 콜백
+├── sync/               # 가이드 원본 동기화
+└── search-summary.js   # Claude 기반 검색 요약
+
+supabase/migrations/    # DB 스키마 (위키·카카오 webhook/partner·RLS)
+scripts/                # 카카오 수집·대시보드 스크립트
+docs/                   # 설계·운영·연동 문서 (아래 색인)
 ```
 
-## 프로젝트 링크
+---
+
+## 문서
+
+### 설정 / 운영
+- [DEPLOYMENT](./docs/DEPLOYMENT.md) — 배포 가이드
+- [DEVELOPMENT](./docs/DEVELOPMENT.md) — 개발 환경
+- [CRON_SYNC_SETUP](./docs/CRON_SYNC_SETUP.md) — 가이드 원본 자동 동기화
+- [PIPELINE_SETUP](./docs/PIPELINE_SETUP.md) — 데이터 파이프라인
+
+### 연동
+- [JIRA_CONFLUENCE_INTEGRATION](./docs/JIRA_CONFLUENCE_INTEGRATION.md) — Jira/Confluence OAuth 2.0
+- [KAKAO_WEBHOOK_SETUP](./docs/KAKAO_WEBHOOK_SETUP.md) — 카카오 문의 webhook
+- [KAKAO_PARTNER_SETUP](./docs/KAKAO_PARTNER_SETUP.md) — 카카오 상담 수집
+- [scripts/README-kakao-sync](./scripts/README-kakao-sync.md) — 수집 스크립트 사용법
+
+### 설계 / 분석
+- [chatbot-design](./docs/chatbot-design.md) — 챗봇 설계
+- [ams-wiki-roadmap](./docs/ams-wiki-roadmap.md) — 로드맵
+- [manager-inquiries-analysis](./docs/manager-inquiries-analysis.md) — 실장 문의 분석
+
+### 디자인 시스템
+- [docs/shadcn-ui/](./docs/shadcn-ui/README.md) — shadcn/ui 철학·CLI·테마·v4 마이그레이션 (17개 주제)
+
+### 기여
+- [CONTRIBUTING](./CONTRIBUTING.md) — 기여 가이드
+
+---
+
+## 링크
 
 - [라이브 데모](https://sdij-wiki.vercel.app)
-- [Vercel 대시보드](https://vercel.com/layr8xs-projects/ams-wiki)
-- [shadcn/ui 문서](https://ui.shadcn.com)
-- [Supabase 문서](https://supabase.com/docs)
-
-## 도움말
-
-- **shadcn/ui 완전 학습 가이드**: [docs/shadcn-ui/README.md](./docs/shadcn-ui/README.md) — 철학·CLI·테마·컴포넌트·레지스트리·MCP·v4 마이그레이션 등 17개 주제
-- **배포 이슈**: [DEPLOYMENT.md](./DEPLOYMENT.md)
-- **기여 가이드**: [CONTRIBUTING.md](./CONTRIBUTING.md)
-- **린팅 규칙**: [ESLint 문서](https://eslint.org)
-- **빌드 설정**: [Vite 문서](https://vitejs.dev)
+- [Vercel 대시보드](https://vercel.com/layr8xs-projects/sdij-wiki)
+- [shadcn/ui 문서](https://ui.shadcn.com) · [Supabase 문서](https://supabase.com/docs)

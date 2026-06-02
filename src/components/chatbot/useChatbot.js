@@ -9,6 +9,7 @@ import { getQaByCategory, OFFICIAL_QA, matchOfficialQa } from '@/data/officialQa
 import { MANAGER_FAQ, searchManagerFaq, bestManagerFaq, popularManagerFaq } from '@/data/managerFaq'
 import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT, guideSearchUrl } from './chatbotConfig'
 import { AMS_GUIDE_INDEX } from '@/data/guides/amsGuideIndex'
+import { fetchFaqViews, incrementFaqView } from '@/lib/db'
 
 export const MSG_TYPES = {
   GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
@@ -71,6 +72,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
   const [formText, setFormText] = useState('')
   const [formFiles, setFormFiles] = useState([])
   const [fileError, setFileError] = useState('')
+  const [faqViews, setFaqViews] = useState({}) // 분류별 TOP5 정렬용 누적 조회수
   const timers = useRef([])
 
   // 봇 응답: 사용자 메시지 즉시 → 타이핑 인디케이터 → 잠시 후 봇 메시지
@@ -84,6 +86,8 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
   }, [])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  // FAQ 누적 조회수 로드 (분류별 TOP 5 정렬용)
+  useEffect(() => { fetchFaqViews().then(setFaqViews).catch(() => {}) }, [])
 
   // ─── 열기/닫기 ──────────────────────────────────────────────────────────
   const open = useCallback(() => setIsOpen(true), [])
@@ -135,6 +139,8 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
   // 시안 2번 형태: 별도 GuideCard 없이 답변 말풍선 안에 링크만. 링크는 위키에
   // 반영된 AMS 가이드 100개 중 최적 매칭으로 연결(없으면 컨플루언스 검색).
   const pickQa = useCallback((qa) => {
+    incrementFaqView(qa.id) // FAQ 클릭 → 누적 조회수 집계
+    setFaqViews((v) => ({ ...v, [qa.id]: (v[qa.id] || 0) + 1 }))
     respond(
       [mk('user', { text: qa.q })],
       [
@@ -298,9 +304,15 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     if (typeof window !== 'undefined') window.localStorage.setItem(ONBOARDED_KEY, '1')
   }, [])
 
+  // 분류별 FAQ: 누적 조회수 상위 5건만 노출 (5건 미만이면 전체) — 정책 반영
+  const getQaByCategoryTop = useCallback(
+    (catId) => [...getQaByCategory(catId)].sort((a, b) => (faqViews[b.id] || 0) - (faqViews[a.id] || 0)).slice(0, 5),
+    [faqViews]
+  )
+
   return {
     isOpen, messages, userName, isFirstVisit,
-    getQaByCategory,
+    getQaByCategory: getQaByCategoryTop,
     activeForm, formText, setFormText, formFiles, fileError, addFiles, removeFile,
     canSubmit: !!activeForm && !!formText.trim(),
     open, close, toggle, reset,

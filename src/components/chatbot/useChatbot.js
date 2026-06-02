@@ -8,6 +8,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { getQaByCategory, OFFICIAL_QA, matchOfficialQa } from '@/data/officialQa'
 import { MANAGER_FAQ, searchManagerFaq, bestManagerFaq, popularManagerFaq } from '@/data/managerFaq'
 import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT, guideSearchUrl } from './chatbotConfig'
+import { AMS_GUIDE_INDEX } from '@/data/guides/amsGuideIndex'
 
 export const MSG_TYPES = {
   GREETING: 'greeting', CHIPS: 'chips', USER: 'user',
@@ -22,6 +23,43 @@ const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const answerText = (qa) => (qa.a || '').replace(/\n{3,}/g, '\n\n').trim()
+
+// ─── AMS 가이드(위키 반영분 100개) 매칭 — 챗봇 검색/관련가이드 연결 ─────────
+// FAQ 카테고리 → 위키 가이드 모듈(카테고리). 관련 가이드 매칭 시 가중치로 사용.
+const CAT_TO_MODULE = {
+  okta: '공통/시스템', refund: '청구/수납/결제/환불', payment: '청구/수납/결제/환불',
+  enrollment: '모집/접수 관리', attendance: '수업운영관리', member: '고객(원생) 관리',
+  course: '강좌/교재 관리', message: '메시지발송 관리',
+}
+const amsGuideUrl = (id) => `/guides/${id}` // 위키 가이드 상세(원문 컨플루언스 링크 포함)
+function amsTokens(q) {
+  const query = (q || '').trim().toLowerCase()
+  if (!query) return []
+  const parts = new Set([query])
+  for (const t of query.split(/\s+/)) if (t.length >= 2) parts.add(t)
+  const compact = query.replace(/\s+/g, '')
+  if (/^[가-힣]{3,}$/.test(compact)) for (let i = 0; i < compact.length - 1; i++) parts.add(compact.slice(i, i + 2))
+  return [...parts]
+}
+function matchAmsGuides(q, limit = 4, moduleHint) {
+  const toks = amsTokens(q)
+  if (!toks.length) return []
+  const scored = []
+  for (const g of AMS_GUIDE_INDEX) {
+    const hay = `${g.title} ${g.tldr}`.toLowerCase()
+    let score = 0
+    for (const t of toks) if (hay.includes(t)) score += g.title.toLowerCase().includes(t) ? 2 : 1
+    if (moduleHint && g.module === moduleHint) score += 1
+    if (score > 0) scored.push({ g, score })
+  }
+  scored.sort((a, b) => b.score - a.score)
+  return scored.slice(0, limit).map((s) => s.g)
+}
+// 답변 "관련 가이드 보기" 링크 — 최적 매칭 AMS 가이드(없으면 컨플루언스 검색)
+function relatedGuideLink(query, category) {
+  const best = matchAmsGuides(query, 1, CAT_TO_MODULE[category])[0]
+  return { label: GUIDE_LINK_LABEL, url: best ? amsGuideUrl(best.id) : guideSearchUrl(query) }
+}
 
 const ONBOARDED_KEY = 'ams-wiki-chatbot-onboarded-v1'
 const initialThread = () => [mk('greeting'), mk('chips')]
@@ -93,14 +131,14 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     else openCategory(chip.id, chip.label)
   }, [startError, openCategory])
 
-  // ─── FAQ 행 → 답변(말풍선 내 "관련 가이드 보기" FAQ 링크) + 후속 칩 ───────
-  // 시안 2번 형태: 별도 GuideCard 없이, 답변 말풍선 안에 FAQ 링크만 노출.
-  // (챗봇은 FAQ 데이터만 기준 → 관련 가이드도 해당 FAQ 링크로 연결)
+  // ─── FAQ 행 → 답변(말풍선 내 "관련 가이드 보기" 링크) + 후속 칩 ──────────
+  // 시안 2번 형태: 별도 GuideCard 없이 답변 말풍선 안에 링크만. 링크는 위키에
+  // 반영된 AMS 가이드 100개 중 최적 매칭으로 연결(없으면 컨플루언스 검색).
   const pickQa = useCallback((qa) => {
     respond(
       [mk('user', { text: qa.q })],
       [
-        mk('bot', { answer: answerText(qa), link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(qa.q) } }),
+        mk('bot', { answer: answerText(qa), link: relatedGuideLink(qa.q, qa.category) }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
       ]
@@ -112,7 +150,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     respond(
       [mk('user', { text: item.q })],
       [
-        mk('bot', { answer: item.a, link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(item.q) } }),
+        mk('bot', { answer: item.a, link: relatedGuideLink(item.q, item.category) }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
       ]
@@ -134,13 +172,16 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     const tokens = [...parts]
     const hit = (text) => { const t = (text || '').toLowerCase(); return tokens.some((p) => t.includes(p)) }
     const qa = OFFICIAL_QA.filter((x) => hit(x.q) || hit(x.tip)).slice(0, 4)
+    const faqCand = [...qa, ...searchManagerFaq(query, 4, faqList)]
+    const amsCand = matchAmsGuides(query, 4) // 위키 반영 AMS 가이드 매칭
     const merged = []
     const seen = new Set()
-    for (const it of [...qa, ...searchManagerFaq(query, 4, faqList)]) {
-      if (seen.has(it.q)) continue
-      seen.add(it.q); merged.push(it)
-      if (merged.length >= limit) break
-    }
+    const push = (it) => { if (it && !seen.has(it.q)) { seen.add(it.q); merged.push(it) } }
+    // AMS 가이드가 있으면 추천 자리 일부를 확보(FAQ로 다 채우지 않도록)
+    const faqQuota = amsCand.length ? Math.max(2, limit - 3) : limit
+    for (const it of faqCand) { if (merged.length >= faqQuota) break; push(it) }
+    for (const g of amsCand) { if (merged.length >= limit) break; push({ id: g.id, q: g.title, tldr: g.tldr, ams: true, url: amsGuideUrl(g.id) }) }
+    for (const it of faqCand) { if (merged.length >= limit) break; push(it) } // 남은 자리 FAQ로
     return merged
   }, [faqList])
 
@@ -149,9 +190,21 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
 
   // 자동완성 클릭 — officialQa(가이드 카드) / 매니저 FAQ(가이드 링크) 분기
   const pickSuggestion = useCallback((item) => {
+    if (item?.ams) {
+      // AMS 가이드 추천 클릭 → 요약 + "관련 가이드 보기"(원문) 링크
+      respond(
+        [mk('user', { text: item.q })],
+        [
+          mk('bot', { answer: item.tldr || item.q, link: { label: GUIDE_LINK_LABEL, url: item.url } }),
+          mk('bot', { text: CONFIRM.more }),
+          mk('chips'),
+        ]
+      )
+      return
+    }
     if (item && item.guideId) faqAnswer(item)
     else pickQa(item)
-  }, [faqAnswer, pickQa])
+  }, [respond, faqAnswer, pickQa])
 
   const search = useCallback((rawQuery) => {
     const query = (rawQuery || '').trim()
@@ -161,7 +214,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       respond(
         [mk('user', { text: query })],
         [
-          mk('bot', { answer: answerText(hit.item), link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(query) } }),
+          mk('bot', { answer: answerText(hit.item), link: relatedGuideLink(query, hit.item.category) }),
           mk('bot', { text: CONFIRM.more }),
           mk('chips'),
         ]
@@ -173,7 +226,7 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
       respond(
         [mk('user', { text: query })],
         [
-          mk('bot', { answer: faq.a, link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(query) } }),
+          mk('bot', { answer: faq.a, link: relatedGuideLink(query, faq.category) }),
           mk('bot', { text: CONFIRM.more }),
           mk('chips'),
         ]
@@ -186,10 +239,9 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
   // ─── 가이드 열기 ────────────────────────────────────────────────────────
   const openGuide = useCallback((arg) => {
     const url = typeof arg === 'string' ? arg : arg?.url
-    if (url) {
-      if (/^https?:\/\//.test(url)) window.open(url, '_blank', 'noopener')
-      else window.location.assign(url)
-    } else onOpenGuide?.(arg)
+    // 절대(컨플루언스)·상대(/guides/…) 모두 새 탭으로 — 챗봇 창은 유지
+    if (url) window.open(url, '_blank', 'noopener')
+    else onOpenGuide?.(arg)
   }, [onOpenGuide])
 
   // ─── 폼 입력(첨부) ──────────────────────────────────────────────────────

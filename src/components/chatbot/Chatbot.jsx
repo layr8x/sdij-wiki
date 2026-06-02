@@ -401,10 +401,11 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
               onMouseEnter={() => setActive(i)}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pick(qa)}
-              className="w-full text-left p-[16px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.99]"
+              className="w-full text-left p-[16px] flex items-center gap-[12px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.99]"
               style={{ borderBottom: `1px solid ${T.border}`, backgroundColor: active === i ? '#F7FAFF' : T.white, ...FONT.bodyL, color: T.navy }}
             >
-              {highlightMatch(qa.q.replace(/[?？]\s*$/, '') + '?', text)}
+              <span className="flex-1 min-w-0 break-words">{highlightMatch(qa.ams ? qa.q : qa.q.replace(/[?？]\s*$/, '') + '?', text)}</span>
+              {qa.ams && <MIcon name="open_in_new" size={24} color={T.placeholder} className="shrink-0" style={{ opacity: 0.4 }} />}
             </button>
           ))}
         </div>

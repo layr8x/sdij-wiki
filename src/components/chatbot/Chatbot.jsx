@@ -426,8 +426,8 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
             style={{ ...FONT.bodyL, color: T.ink }}
             autoComplete="off"
           />
-          <span aria-hidden className="shrink-0 flex items-center justify-center p-[12px] rounded-full" style={{ backgroundColor: T.disabled }}>
-            <MIcon name="search" size={24} color={T.placeholder} />
+          <span aria-hidden className="shrink-0 flex items-center justify-center p-[12px]">
+            <MIcon name="search" size={28} color={T.ink} />
           </span>
         </form>
       </div>

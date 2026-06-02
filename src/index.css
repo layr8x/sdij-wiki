@@ -214,6 +214,21 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+
+  /* 인터랙티브 요소 hover 시 포인터(손 모양) 커서
+     — Tailwind v4 preflight 는 button 에 cursor 를 지정하지 않아 화살표로 남음 */
+  button:not(:disabled):not([aria-disabled="true"]),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary,
+  a[href] {
+    cursor: pointer;
+  }
+  button:disabled,
+  button[aria-disabled="true"],
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* ─── 프로세(산문) 스타일 — GuidePage 본문 가독성 ──────────────────────── */

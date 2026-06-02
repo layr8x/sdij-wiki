@@ -5,8 +5,7 @@
 // 인터랙션: 봇 응답 전 타이핑 인디케이터(대화감) · reduced-motion 존중.
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { getRelatedGuidesForQa } from './intents'
-import { getQaByCategory, OFFICIAL_QA, OFFICIAL_QA_CATEGORIES, matchOfficialQa } from '@/data/officialQa'
+import { getQaByCategory, OFFICIAL_QA, matchOfficialQa } from '@/data/officialQa'
 import { MANAGER_FAQ, searchManagerFaq, bestManagerFaq, popularManagerFaq } from '@/data/managerFaq'
 import { getCategoryLabel, FORM_COPY, CONFIRM, GUIDE_LINK_LABEL, SOLUTION_INTRO, ATTACH_LIMIT, guideSearchUrl } from './chatbotConfig'
 
@@ -23,20 +22,6 @@ const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const answerText = (qa) => (qa.a || '').replace(/\n{3,}/g, '\n\n').trim()
-
-function buildGuideCard(qa) {
-  const cat = OFFICIAL_QA_CATEGORIES.find((c) => c.id === qa.category)
-  const related = getRelatedGuidesForQa(qa)
-  const top = related[0]
-  const lead = (qa.a || '').split('\n').map((s) => s.trim()).filter(Boolean)[0] || ''
-  return {
-    categoryLabel: cat?.label || getCategoryLabel(qa.category),
-    categoryEmoji: cat?.emoji || '📘',
-    title: top?.title || `${qa.q.replace(/[?？]\s*$/, '')} 가이드`,
-    snippet: lead || qa.tip || '',
-    url: guideSearchUrl(qa.q), // 가이드 원본은 Confluence AMS 스페이스 내부 검색으로 연결
-  }
-}
 
 const ONBOARDED_KEY = 'ams-wiki-chatbot-onboarded-v1'
 const initialThread = () => [mk('greeting'), mk('chips')]
@@ -108,13 +93,14 @@ export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER
     else openCategory(chip.id, chip.label)
   }, [startError, openCategory])
 
-  // ─── FAQ 행 → 답변 + 가이드 카드 + 후속 칩 ───────────────────────────────
+  // ─── FAQ 행 → 답변(말풍선 내 "관련 가이드 보기" FAQ 링크) + 후속 칩 ───────
+  // 시안 2번 형태: 별도 GuideCard 없이, 답변 말풍선 안에 FAQ 링크만 노출.
+  // (챗봇은 FAQ 데이터만 기준 → 관련 가이드도 해당 FAQ 링크로 연결)
   const pickQa = useCallback((qa) => {
     respond(
       [mk('user', { text: qa.q })],
       [
-        mk('bot', { answer: answerText(qa) }),
-        mk('guide', { guide: buildGuideCard(qa) }),
+        mk('bot', { answer: answerText(qa), link: { label: GUIDE_LINK_LABEL, url: guideSearchUrl(qa.q) } }),
         mk('bot', { text: CONFIRM.more }),
         mk('chips'),
       ]

@@ -349,8 +349,8 @@ function highlightMatch(text, q) {
   )
 }
 
-// ─── 하단 검색바 (자유 입력 + FAQ 자동완성 + 키보드 탐색) ────────────────
-function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
+// ─── 하단 검색바 (FAQ 자동완성 — 클릭 전용, 돋보기는 장식 아이콘) ──────────
+function SearchBar({ suggest, popular, onPickSuggestion }) {
   const [text, setText] = useState('')
   const [focused, setFocused] = useState(false)
   const [open, setOpen] = useState(false)
@@ -363,18 +363,14 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
   // 팝업 열리면 데스크탑 자동 포커스(모바일은 키보드 방지)
   useEffect(() => { if (!isMobile) inputRef.current?.focus() }, [isMobile])
 
-  const submit = (v) => {
-    const q = (v ?? text).trim()
-    if (!q) return
-    onSearch(q); setText(''); setOpen(false); inputRef.current?.focus()
-  }
   const pick = (qa) => { setText(''); setOpen(false); onPickSuggestion(qa); inputRef.current?.focus() }
+  // 검색은 자동완성 클릭 전용 — Enter 제출 없음(돋보기는 검색창임을 알리는 장식 아이콘).
   const onKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); return } // 엔터로 검색되지 않도록
     if (e.key === 'Escape' && open && list.length) { e.stopPropagation(); setOpen(false); return }
     if (!list.length) return
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => (i + 1) % list.length) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => (i - 1 + list.length) % list.length) }
-    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); pick(list[active]) }
   }
 
   // 추천검색 + 입력을 하나의 흰 패널로 (시안 IMG_4105: 검색 시 패널이 위로 자라며
@@ -412,7 +408,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
       )}
       <div className="px-[16px] py-[12px]">
         <form
-          onSubmit={(e) => { e.preventDefault(); submit() }}
+          onSubmit={(e) => e.preventDefault()}
           className="flex items-center gap-[8px] p-[8px] rounded-[32px]"
           style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, boxShadow: focused ? '0 0 0 3px rgba(0,67,206,0.12)' : 'none', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', transition: 'border-color 150ms, box-shadow 150ms' }}
         >
@@ -430,9 +426,9 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
             style={{ ...FONT.bodyL, color: T.ink }}
             autoComplete="off"
           />
-          <button type="submit" aria-label="검색" className="shrink-0 flex items-center justify-center p-[12px] rounded-full transition-[filter,transform] duration-150 hover:brightness-110 hover:scale-105 active:scale-95" style={{ backgroundColor: T.brandBlue }}>
-            <MIcon name="search" size={24} color={T.inkOnColor} />
-          </button>
+          <span aria-hidden className="shrink-0 flex items-center justify-center p-[12px] rounded-full" style={{ backgroundColor: T.disabled }}>
+            <MIcon name="search" size={24} color={T.placeholder} />
+          </span>
         </form>
       </div>
     </div>
@@ -503,7 +499,7 @@ function ChatbotConversation({ chatbot }) {
       {chatbot.activeForm ? (
         <FormActionBar canSubmit={chatbot.canSubmit} onCancel={chatbot.cancelForm} onSubmit={chatbot.submitForm} />
       ) : (
-        <SearchBar onSearch={chatbot.search} suggest={chatbot.faqSuggestions} popular={chatbot.popularSuggestions} onPickSuggestion={chatbot.pickSuggestion} />
+        <SearchBar suggest={chatbot.faqSuggestions} popular={chatbot.popularSuggestions} onPickSuggestion={chatbot.pickSuggestion} />
       )}
     </>
   )

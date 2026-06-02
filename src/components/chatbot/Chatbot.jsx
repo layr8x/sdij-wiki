@@ -156,8 +156,8 @@ function Chip({ label, variant, index = 0, onClick }) {
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="px-[20px] py-[8px] rounded-[24px] transition-all duration-150 hover:-translate-y-px active:scale-95 animate-in fade-in zoom-in-95 fill-mode-both"
-      style={{ backgroundColor: hover ? '#FAFAFA' : T.white, border: `1px solid ${T.borderStrong}`, boxShadow: T.shadowS, animationDuration: '280ms', animationDelay: `${index * 45}ms` }}
+      className="px-[20px] py-[8px] rounded-[24px] transition-[transform,box-shadow,background-color] duration-150 ease-out motion-reduce:transition-none hover:-translate-y-px active:scale-95 animate-in fade-in zoom-in-95 fill-mode-both"
+      style={{ backgroundColor: hover ? '#FAFAFA' : T.white, border: `1px solid ${T.borderStrong}`, boxShadow: hover ? '0 6px 16px rgba(0,67,206,0.10)' : T.shadowS, animationDuration: '280ms', animationDelay: `${index * 45}ms` }}
     >
       <span style={{ ...FONT.bodyL, color: red ? T.error : T.ink }}>{label}</span>
     </button>
@@ -180,7 +180,7 @@ function FaqRow({ children, onClick, isLink, last }) {
     <button
       type="button"
       onClick={onClick}
-      className="group w-full flex items-center gap-[16px] p-[16px] text-left transition-colors duration-150 hover:bg-[#F7FAFF] active:bg-[#EDF5FF]"
+      className="group w-full flex items-center gap-[16px] p-[16px] text-left transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[#F7FAFF] active:bg-[#EDF5FF] active:scale-[0.99]"
       style={{ backgroundColor: T.white, borderBottom: last ? 'none' : `1px solid ${T.border}` }}
     >
       <span className="flex-1 min-w-0 break-words" style={{ ...FONT.bodyL, color: isLink ? T.link : T.navy }}>{children}</span>
@@ -245,7 +245,7 @@ function FileChip({ name, onRemove }) {
   return (
     <div className="w-full flex items-center gap-[8px] px-[16px] py-[8px] rounded-[4px]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
       <span className="flex-1 min-w-0 truncate" style={{ ...BTN, color: T.ink }}>{name}</span>
-      <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0 transition-colors hover:brightness-0" style={{ color: T.placeholder }}>
+      <button type="button" onClick={onRemove} aria-label="첨부 삭제" className="shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none hover:scale-110 active:scale-90" style={{ color: T.placeholder }}>
         <MIcon name="delete" size={28} color={T.placeholder} />
       </button>
     </div>
@@ -286,9 +286,9 @@ function InlineForm({ m, chatbot }) {
       />
       {chatbot.formFiles.map((f, i) => <FileChip key={i} name={f.name} onRemove={() => chatbot.removeFile(i)} />)}
       {chatbot.formFiles.length < ATTACH_LIMIT.maxCount && (
-        <button type="button" onClick={() => fileRef.current?.click()} className="w-full flex items-center justify-center gap-[8px] px-[20px] py-[8px] rounded-[2px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
+        <button type="button" onClick={() => fileRef.current?.click()} className="group w-full flex items-center justify-center gap-[8px] px-[20px] py-[8px] rounded-[2px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[#FAFAFA] active:scale-[0.99]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
           <span style={{ ...BTN, color: T.ink }}>이미지 첨부하기</span>
-          <MIcon name="add" size={24} color={T.ink} />
+          <MIcon name="add" size={24} color={T.ink} className="transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:rotate-90" />
         </button>
       )}
       <input ref={fileRef} type="file" accept={ATTACH_LIMIT.accept} multiple hidden onChange={(e) => chatbot.addFiles(e.target.files)} />
@@ -302,7 +302,7 @@ function InlineForm({ m, chatbot }) {
 function FormActionBar({ canSubmit, onCancel, onSubmit }) {
   return (
     <div className="shrink-0 flex items-center justify-between px-[16px] py-[16px]" style={{ backgroundColor: T.white, borderTop: `1px solid ${T.border}` }}>
-      <button type="button" onClick={onCancel} className="flex items-center justify-center px-[32px] py-[16px] rounded-[32px] transition-colors hover:bg-[#FAFAFA]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
+      <button type="button" onClick={onCancel} className="flex items-center justify-center px-[32px] py-[16px] rounded-[32px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[#FAFAFA] active:scale-[0.98]" style={{ backgroundColor: T.white, border: `1px solid ${T.borderStrong}` }}>
         <span style={{ ...BTN, color: T.ink }}>취소</span>
       </button>
       <button type="button" onClick={onSubmit} disabled={!canSubmit} className="group flex items-center justify-center gap-[4px] pl-[32px] pr-[28px] py-[16px] rounded-[32px] transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed" style={{ backgroundColor: canSubmit ? T.brandBlue : T.disabled }}>
@@ -380,7 +380,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
               onMouseEnter={() => setActive(i)}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pick(qa)}
-              className="w-full text-left p-[16px] transition-colors duration-150"
+              className="w-full text-left p-[16px] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.99]"
               style={{ borderBottom: `1px solid ${T.border}`, backgroundColor: active === i ? '#F7FAFF' : T.white, ...FONT.bodyL, color: T.navy }}
             >
               {highlightMatch(qa.q.replace(/[?？]\s*$/, '') + '?', text)}
@@ -392,7 +392,7 @@ function SearchBar({ onSearch, suggest, popular, onPickSuggestion }) {
         <form
           onSubmit={(e) => { e.preventDefault(); submit() }}
           className="flex items-center gap-[8px] p-[8px] rounded-[32px]"
-          style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', transition: 'border-color 150ms' }}
+          style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, boxShadow: focused ? '0 0 0 3px rgba(0,67,206,0.12)' : 'none', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', transition: 'border-color 150ms, box-shadow 150ms' }}
         >
           <input
             ref={inputRef}

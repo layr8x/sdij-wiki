@@ -56,13 +56,14 @@ export const FONT = {
 // ─── 공지 카드 ───────────────────────────────────────────────────────────
 export const SYSTEM_NOTICE = { emoji: '📢', text: '2026년 6월 - 기능 업데이트 안내' }
 
-// ─── 칩 메뉴 (Figma: 카테고리 5 + 오류신고) ──────────────────────────────
+// ─── 칩 메뉴 (대메뉴 7개 — 시안 순서: OKTA·강좌/영상/교재·입퇴반/대기·결제/환불·출결/배부·회원·오류신고) ──
 export const CHIP_MENU = [
-  { id: 'okta', label: '로그인/OKTA' },
-  { id: 'refund', label: '환불/취소' },
-  { id: 'payment', label: '수강료/결제' },
-  { id: 'enrollment', label: '입반/대기' },
-  { id: 'attendance', label: '출결/보강' },
+  { id: 'okta', label: 'OKTA' },
+  { id: 'course', label: '강좌/영상/교재' },
+  { id: 'enrollment', label: '입퇴반/대기' },
+  { id: 'payment', label: '결제/환불' }, // payment + refund FAQ 통합
+  { id: 'attendance', label: '출결/배부' },
+  { id: 'member', label: '회원' },
   { id: 'error', label: '오류신고', variant: 'red' },
 ]
 

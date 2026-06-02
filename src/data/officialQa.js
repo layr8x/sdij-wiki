@@ -312,8 +312,12 @@ export function matchOfficialQa(query) {
   return bestScore >= 6 ? { item: best, score: bestScore } : null
 }
 
+// 대메뉴 칩 → 포함할 FAQ 카테고리(여러 개 합칠 수 있음). '결제/환불' = payment+refund
+const CATEGORY_MERGE = { payment: ['payment', 'refund'] }
+
 export function getQaByCategory(categoryId) {
-  return OFFICIAL_QA.filter(q => q.category === categoryId)
+  const cats = CATEGORY_MERGE[categoryId] || [categoryId]
+  return OFFICIAL_QA.filter(q => cats.includes(q.category))
 }
 
 export function getQaById(id) {

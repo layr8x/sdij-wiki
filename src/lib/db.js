@@ -239,6 +239,23 @@ export async function incrementViews(guideId) {
   // mockData는 in-memory이므로 변경 불필요
 }
 
+// ─── 챗봇 FAQ 조회수 (분류별 TOP 5 정렬용 · 누적) ──────────────────────────
+/** 전체 FAQ 누적 조회수 맵 { faq_id: views } (Supabase 미연결 시 빈 객체) */
+export async function fetchFaqViews() {
+  if (!isSupabaseEnabled) return {}
+  const { data, error } = await supabase.from('faq_views').select('faq_id,views')
+  if (error) return {}
+  const map = {}
+  for (const r of data || []) map[r.faq_id] = r.views
+  return map
+}
+
+/** FAQ 클릭 시 누적 조회수 +1 (익명 RPC, 실패 무시) */
+export async function incrementFaqView(faqId) {
+  if (!isSupabaseEnabled || !faqId) return
+  try { await supabase.rpc('increment_faq_view', { p_faq_id: faqId }) } catch { /* noop */ }
+}
+
 // ─── 통계 대시보드 ───────────────────────────────────────────────────────────
 
 export async function fetchDashboardStats() {
@@ -264,7 +281,6 @@ export async function fetchDashboardStats() {
   // Supabase 미연결 fallback — 실제 운영 데이터(SSOT) 기반.
   // 출처: 실장님 시트 25 Q&A (officialQa.js) + FVSOL 컨플 130 페이지 + AMS 1 페이지 (confluence-sources.js)
   // 누적 조회수/만족도는 Supabase 연결 후 실측. 현재는 정직하게 0/null.
-  // eslint-disable-next-line no-unused-vars
   const _legacyMockGuides = Object.values(GUIDES)
   // 동적 import 회피 — Vite tree-shaking 위해 모듈 상단 import 사용 권장이나
   // 순환 의존성 회피 위해 require-style 동적 import.

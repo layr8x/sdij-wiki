@@ -1,7 +1,7 @@
 // src/components/integrations/JiraConfluenceSettings.jsx
 // Jira/Confluence OAuth 통합 설정 UI
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

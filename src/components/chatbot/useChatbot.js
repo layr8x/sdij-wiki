@@ -1,17 +1,8 @@
 // src/components/chatbot/useChatbot.js
-// AMS Wiki 챗봇 상태 + 액션 훅 (v4 고도화)
+// AMS 챗봇 — 대화형 단일 스레드 상태머신 (Figma v4 / 실시간 FAQ 참조)
 //
-// 외부 의존:
-//  - intents.js (의도 분석 + 인용 + Trust Calibration)
-//  - 향후 src/lib/db.js (가이드 조회) 또는 Supabase RPC
-//  - 향후 src/lib/chatbot/api.js (LLM 엔드포인트)
-//
-// v4 신규 (2026-05-19):
-//  - Streaming 응답 시뮬레이션 (Claude/ChatGPT 패턴) — 토큰별 점진 표시
-//  - Conversation Memory (Cathy Pearl) — 최근 5개 user 발화 컨텍스트로 보존
-//  - Onboarding Tour (Intercom Fin 패턴) — 첫 사용자 3-step
-//  - Trust Calibration band (NIST 2025) — 응답마다 confidence label
-//  - Inline citations (Perplexity 2025) — 응답에 [1] 마커
+// 데이터: officialQa(25 시트 Q&A) + 매니저 FAQ(/api/faq 실시간, 번들 폴백).
+// 인터랙션: 봇 응답 전 타이핑 인디케이터(대화감) · reduced-motion 존중.
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
@@ -74,91 +65,38 @@ const MSG_TYPES = {
   ONBOARDING_TOUR: 'onboarding-tour',       // v4: 첫 사용자 가이드
 }
 
-let msgIdCounter = 1
-const nextId = () => msgIdCounter++
+const ONBOARDED_KEY = 'ams-wiki-chatbot-onboarded-v1'
+const initialThread = () => [mk('greeting'), mk('chips')]
 
-export function useChatbot({ contextKey = 'home', userName = '명준', stage: initialStage = CHATBOT_STAGES.FAQ } = {}) {
+export function useChatbot({ userName = '명준', onOpenGuide, faqList = MANAGER_FAQ } = {}) {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState([])
-  const [stage, setStage] = useState(initialStage)
-  // isTyping은 위젯이 typing indicator를 메시지 목록에 직접 추가하는 방식으로 표시.
-  // 별도 boolean state는 현재 불필요하나 향후 abort 처리용으로 유지.
-  const [isTyping] = useState(false)
-  const conversationStarted = useRef(false)
+  const [messages, setMessages] = useState(initialThread)
+  const [activeForm, setActiveForm] = useState(null)
+  const [formText, setFormText] = useState('')
+  const [formFiles, setFormFiles] = useState([])
+  const [fileError, setFileError] = useState('')
+  const [faqViews, setFaqViews] = useState({}) // 분류별 TOP5 정렬용 누적 조회수
+  const timers = useRef([])
 
-  // v4 — Conversation Memory (Cathy Pearl): 최근 사용자 발화 N개 보존
-  const userHistoryRef = useRef([])
-
-  // v4 — Onboarding Tour (Intercom Fin): 첫 사용자 여부
-  const [needsOnboarding, setNeedsOnboarding] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return !window.localStorage.getItem(ONBOARDING_DONE_KEY)
-  })
-  const completeOnboarding = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(ONBOARDING_DONE_KEY, '1')
-    }
-    setNeedsOnboarding(false)
+  // 봇 응답: 사용자 메시지 즉시 → 타이핑 인디케이터 → 잠시 후 봇 메시지
+  const respond = useCallback((userItems, botItems, delay = 600) => {
+    const typingId = nextId()
+    setMessages((prev) => [...prev, ...userItems, { id: typingId, type: 'typing' }])
+    const t = setTimeout(() => {
+      setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...botItems])
+    }, prefersReduced() ? 0 : delay)
+    timers.current.push(t)
   }, [])
 
-  // === 메시지 추가 헬퍼 ===
-  const addMessage = useCallback((msg) => {
-    setMessages(prev => [...prev, { id: nextId(), createdAt: Date.now(), ...msg }])
-  }, [])
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  // FAQ 누적 조회수 로드 (분류별 TOP 5 정렬용)
+  useEffect(() => { fetchFaqViews().then(setFaqViews).catch(() => {}) }, [])
 
-  const removeMessage = useCallback((id) => {
-    setMessages(prev => prev.filter(m => m.id !== id))
-  }, [])
-
-  // === 초기 대화 흐름 — 먼저 선언해서 open/reset이 참조 가능하도록 ===
-  const startConversation = useCallback(() => {
-    setTimeout(() => addMessage({
-      type: MSG_TYPES.BOT_CONTEXT_BANNER,
-      contextKey,
-    }), 100)
-
-    setTimeout(() => addMessage({
-      type: MSG_TYPES.BOT_TEXT,
-      html: `안녕하세요, ${userName}님 👋<br>저는 <b>AMS Wiki</b>입니다. 운영 가이드와 자주 묻는 질문을 빠르게 찾아드려요.`,
-    }), 500)
-
-    setTimeout(() => addMessage({
-      type: MSG_TYPES.BOT_CAPABILITY,
-    }), 1000)
-
-    // v5+: 시간/시즌 기반 컨텍스트 힌트 (단과 카톡 + 채널톡 분석 인사이트)
-    const hints = getContextualHints()
-    if (hints.length > 0) {
-      setTimeout(() => addMessage({
-        type: MSG_TYPES.BOT_CONTEXTUAL_HINT,
-        hints,
-      }), 1300)
-    }
-
-    setTimeout(() => {
-      addMessage({
-        type: MSG_TYPES.BOT_TEXT,
-        html: '먼저 이런 것들이 자주 물어보세요:',
-      })
-      addMessage({
-        type: MSG_TYPES.QUICK_REPLIES,
-        replies: getQuickRepliesForContext(contextKey),
-      })
-    }, 1500)
-  }, [contextKey, userName, addMessage])
-
-  // === 위젯 열기/닫기 ===
-  const open = useCallback(() => {
-    setIsOpen(true)
-    if (!conversationStarted.current) {
-      conversationStarted.current = true
-      startConversation()
-    }
-  }, [startConversation])
-
+  // ─── 열기/닫기 ──────────────────────────────────────────────────────────
+  const open = useCallback(() => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
-  const toggle = useCallback(() => setIsOpen(o => !o), [])
-
+  const toggle = useCallback(() => setIsOpen((o) => !o), [])
+  const clearForm = useCallback(() => { setActiveForm(null); setFormText(''); setFormFiles([]); setFileError('') }, [])
   const reset = useCallback(() => {
     setMessages([])
     conversationStarted.current = false
@@ -170,227 +108,149 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
   const generateResponse = useCallback((userText) => {
     const detection = detectIntent(userText)
 
-    if (!detection.intent || detection.confidence < CONFIDENCE_THRESHOLD) {
-      // 의도 미인식 → 명확화 질문 (Watson Disambiguation 패턴)
-      addMessage({
-        type: MSG_TYPES.BOT_TEXT,
-        html: '죄송해요, 정확히 이해하지 못했어요. 다음 중 어떤 것에 가까운가요?',
-      })
-      addMessage({
-        type: MSG_TYPES.QUICK_REPLIES,
-        replies: ['회원 병합', '영상 재생 문제', '환불 절차'],
-      })
-      addMessage({
-        type: MSG_TYPES.BOT_ESCALATION,
-        reason: 'low-confidence',
-        originalQuery: userText,
-      })
+  const requestSolution = useCallback(() => {
+    startForm('solution', [mk('user', { text: SOLUTION_INTRO.user }), mk('bot', { text: SOLUTION_INTRO.bot })])
+  }, [startForm])
+
+  const startError = useCallback(() => {
+    startForm('error', [
+      mk('user', { text: FORM_COPY.error.userLabel }),
+      mk('bot', { text: FORM_COPY.error.intro, link: { label: FORM_COPY.error.link.label, url: FORM_COPY.error.link.url } }),
+    ])
+  }, [startForm])
+
+  const pickChip = useCallback((chip) => {
+    if (chip.id === 'error') startError()
+    else openCategory(chip.id, chip.label)
+  }, [startError, openCategory])
+
+  // ─── FAQ 행 → 답변(말풍선 내 "관련 가이드 보기" 링크) + 후속 칩 ──────────
+  // 시안 2번 형태: 별도 GuideCard 없이 답변 말풍선 안에 링크만. 링크는 위키에
+  // 반영된 AMS 가이드 100개 중 최적 매칭으로 연결(없으면 컨플루언스 검색).
+  const pickQa = useCallback((qa) => {
+    incrementFaqView(qa.id) // FAQ 클릭 → 누적 조회수 집계
+    setFaqViews((v) => ({ ...v, [qa.id]: (v[qa.id] || 0) + 1 }))
+    respond(
+      [mk('user', { text: qa.q })],
+      [
+        mk('bot', { answer: answerText(qa), link: relatedGuideLink(qa.q, qa.category) }),
+        mk('bot', { text: CONFIRM.more }),
+        mk('chips'),
+      ]
+    )
+  }, [respond])
+
+  // ─── 매니저 FAQ 답변 (단일 원본 가이드 → /faq 링크) ─────────────────────
+  const faqAnswer = useCallback((item) => {
+    respond(
+      [mk('user', { text: item.q })],
+      [
+        mk('bot', { answer: item.a, link: relatedGuideLink(item.q, item.category) }),
+        mk('bot', { text: CONFIRM.more }),
+        mk('chips'),
+      ]
+    )
+  }, [respond])
+
+  // ─── 하단 검색 + 자동완성 (officialQa + 매니저 FAQ 전체 참조) ────────────
+  // 폭넓은 매칭: 전체 질의 + 공백 토큰 + (붙여쓴 한글 합성어는 2글자 묶음)으로
+  // 관련 항목을 두루 노출 (예: "환불취소" → 환불·취소 관련 항목 다수)
+  const faqSuggestions = useCallback((q, limit = 6) => {
+    const query = (q || '').trim()
+    if (!query) return []
+    const parts = new Set([query.toLowerCase()])
+    for (const t of query.split(/\s+/)) if (t.length >= 2) parts.add(t.toLowerCase())
+    const compact = query.replace(/\s+/g, '')
+    if (/^[가-힣]{3,}$/.test(compact)) {
+      for (let i = 0; i < compact.length - 1; i++) parts.add(compact.slice(i, i + 2).toLowerCase())
+    }
+    const tokens = [...parts]
+    const hit = (text) => { const t = (text || '').toLowerCase(); return tokens.some((p) => t.includes(p)) }
+    const qa = OFFICIAL_QA.filter((x) => hit(x.q) || hit(x.tip)).slice(0, 4)
+    const faqCand = [...qa, ...searchManagerFaq(query, 4, faqList)]
+    const amsCand = matchAmsGuides(query, 4) // 위키 반영 AMS 가이드 매칭
+    const merged = []
+    const seen = new Set()
+    const push = (it) => { if (it && !seen.has(it.q)) { seen.add(it.q); merged.push(it) } }
+    // AMS 가이드가 있으면 추천 자리 일부를 확보(FAQ로 다 채우지 않도록)
+    const faqQuota = amsCand.length ? Math.max(2, limit - 3) : limit
+    for (const it of faqCand) { if (merged.length >= faqQuota) break; push(it) }
+    for (const g of amsCand) { if (merged.length >= limit) break; push({ id: g.id, q: g.title, tldr: g.tldr, ams: true, url: amsGuideUrl(g.id) }) }
+    for (const it of faqCand) { if (merged.length >= limit) break; push(it) } // 남은 자리 FAQ로
+    return merged
+  }, [faqList])
+
+  // 빈 검색창 포커스 시 추천 (인기 FAQ)
+  const popularSuggestions = useCallback(() => popularManagerFaq(5, faqList), [faqList])
+
+  // 자동완성 클릭 — officialQa(가이드 카드) / 매니저 FAQ(가이드 링크) 분기
+  const pickSuggestion = useCallback((item) => {
+    if (item?.ams) {
+      // AMS 가이드 추천 클릭 → 요약 + "관련 가이드 보기"(원문) 링크
+      respond(
+        [mk('user', { text: item.q })],
+        [
+          mk('bot', { answer: item.tldr || item.q, link: { label: GUIDE_LINK_LABEL, url: item.url } }),
+          mk('bot', { text: CONFIRM.more }),
+          mk('chips'),
+        ]
+      )
       return
     }
+    if (item && item.guideId) faqAnswer(item)
+    else pickQa(item)
+  }, [respond, faqAnswer, pickQa])
 
-    // v5: 실장님 시트 매칭 우선 분기 ─────────────────────────
-    if (detection.source === 'sheet' && detection.officialQa) {
-      const qa = detection.officialQa
-      const mode = decideResponseMode(qa)
-      const cat = OFFICIAL_QA_CATEGORIES.find(c => c.id === qa.category)
-
-      // 답변 본문 (단계 + 주의사항)
-      addMessage({
-        type: MSG_TYPES.BOT_OFFICIAL_QA,
-        qa,
-        category: cat,
-        mode,
-      })
-
-      // 자가해결=가능 → 메뉴 경로 카드
-      if (mode === 'self-solve' && qa.menuPath) {
-        addMessage({
-          type: MSG_TYPES.BOT_MENU_PATH,
-          menuPath: qa.menuPath,
-          tip: qa.tip,
-        })
-      }
-
-      // 자가해결=불가 → 즉시 에스컬레이션 (슬랙 제목 자동)
-      if (mode === 'escalate') {
-        addMessage({
-          type: MSG_TYPES.BOT_ESCALATION,
-          reason: 'self-solve-impossible',
-          originalQuery: userText,
-          slackTitle: qa.slackTitle || `${cat?.label || ''} 처리 요청`,
-          tip: qa.tip,
-        })
-      }
-
-      // 부분 가능 → 자가/플서실 분리 안내
-      if (mode === 'partial') {
-        addMessage({
-          type: MSG_TYPES.BOT_TEXT,
-          html: `이 항목은 <b>일부만 직접 처리 가능</b>해요. 처리 가능한 부분은 위 경로로 진행하시고, 나머지는 플서실 요청이 필요합니다.`,
-        })
-        if (qa.slackTitle) {
-          addMessage({
-            type: MSG_TYPES.BOT_ESCALATION,
-            reason: 'partial-escalate',
-            originalQuery: userText,
-            slackTitle: qa.slackTitle,
-            tip: qa.tip,
-          })
-        }
-      }
-
-      // (Confidence 밴드 제거 — 사용자 요청: 가이드에 의심만 들게 만듦)
-
-      // v5+: 관련 컨플 가이드 자동 인용 (FVSOL + AMS)
-      const relatedGuides = getRelatedGuidesForQa(qa)
-      if (relatedGuides.length > 0) {
-        addMessage({
-          type: MSG_TYPES.BOT_RELATED_GUIDES,
-          guides: relatedGuides,
-          category: cat,
-        })
-      }
-
-      // v5+: 부정 시그널 빈도가 높은 카테고리 (실데이터 2026-05-20: payment_refund 63.6%, video_playback 25.6%) — 자동 매니저 추천
-      // 구조 변경: NEGATIVE_SIGNAL_BY_CATEGORY[cat] = { rate, total, negative, action } | number (legacy)
-      const negEntry = NEGATIVE_SIGNAL_BY_CATEGORY[qa.category]
-      const negRate = typeof negEntry === 'object' && negEntry !== null ? (negEntry.rate ?? 0) : (negEntry || 0)
-      if (detection.isNegative || negRate >= 0.25) {
-        const recommended = getRecommendedManagers(qa.category)
-        if (recommended.length > 0) {
-          addMessage({
-            type: MSG_TYPES.BOT_CONTEXTUAL_HINT,
-            hints: [{ icon: '👥', text: `이 카테고리 담당: ${recommended.join(' / ')}` }],
-          })
-        }
-      }
-
-      addMessage({ type: MSG_TYPES.FEEDBACK, intentId: qa.id })
-
-      // 부정 시그널이면 에스컬레이션 한 번 더 권유
-      if (detection.isNegative && mode === 'self-solve') {
-        setTimeout(() => addMessage({
-          type: MSG_TYPES.BOT_ESCALATION,
-          reason: 'negative-signal',
-          originalQuery: userText,
-          slackTitle: qa.slackTitle || `${cat?.label || ''} 문의`,
-        }), 700)
-      }
+  const search = useCallback((rawQuery) => {
+    const query = (rawQuery || '').trim()
+    if (!query) return
+    const hit = matchOfficialQa(query)
+    if (hit?.item) {
+      respond(
+        [mk('user', { text: query })],
+        [
+          mk('bot', { answer: answerText(hit.item), link: relatedGuideLink(query, hit.item.category) }),
+          mk('bot', { text: CONFIRM.more }),
+          mk('chips'),
+        ]
+      )
       return
     }
-
-    const { rule, isNegative } = detection
-
-    // v5+: 신뢰도 밴드 제거 (사용자 요청 — 가이드 의심 유발). 인용 메타만 유지.
-    const citation = getCitation(rule.docSlug)
-    const citationNum = citation?.n || 1
-
-    if (stage === CHATBOT_STAGES.FAQ) {
-      // 1차 FAQ: 가이드 카드 응답 + 인라인 [1] 인용 + 신뢰도 밴드
-      addMessage({
-        type: MSG_TYPES.BOT_TEXT,
-        html: `"${rule.title}" 관련 가이드를 찾았어요 [${citationNum}].`,
-        citations: citation ? [citation] : [],
-      })
-      addMessage({
-        type: MSG_TYPES.BOT_GUIDE_CARD,
-        category: rule.category,
-        title: rule.title,
-        docSlug: rule.docSlug,
-        confidence: rule.confidence,
-      })
-      addMessage({ type: MSG_TYPES.FEEDBACK, intentId: rule.intent })
+    const faq = bestManagerFaq(query, faqList)
+    if (faq) {
+      respond(
+        [mk('user', { text: query })],
+        [
+          mk('bot', { answer: faq.a, link: relatedGuideLink(query, faq.category) }),
+          mk('bot', { text: CONFIRM.more }),
+          mk('chips'),
+        ]
+      )
+      return
     }
-    else if (stage === CHATBOT_STAGES.RAG) {
-      // 2차 RAG: streaming + 인용 + 가이드 카드
-      const ragText = generateRagResponse(rule.intent, userText)
-      // 본문 끝에 [1] 마커 부착 (Perplexity 스타일)
-      const ragWithCitation = ragText.replace(/\.<br>/, `.<sup class="citation-marker">[${citationNum}]</sup><br>`)
+    requestSolution() // 무결과 → 해결방법요청 폼
+  }, [respond, requestSolution, faqList])
 
-      addMessage({
-        type: MSG_TYPES.BOT_STREAMING,
-        html: ragWithCitation || ragText,
-        citations: citation ? [citation] : [],
-      })
-      if (citation) {
-        addMessage({
-          type: MSG_TYPES.BOT_CITATION_LIST,
-          citations: [citation],
-        })
+  // ─── 가이드 열기 ────────────────────────────────────────────────────────
+  const openGuide = useCallback((arg) => {
+    const url = typeof arg === 'string' ? arg : arg?.url
+    // 절대(컨플루언스)·상대(/guides/…) 모두 새 탭으로 — 챗봇 창은 유지
+    if (url) window.open(url, '_blank', 'noopener')
+    else onOpenGuide?.(arg)
+  }, [onOpenGuide])
+
+  // ─── 폼 입력(첨부) ──────────────────────────────────────────────────────
+  const addFiles = useCallback((list) => {
+    setFileError('')
+    setFormFiles((prev) => {
+      const next = [...prev]
+      for (const f of Array.from(list)) {
+        if (next.length >= ATTACH_LIMIT.maxCount) { setFileError(`이미지는 최대 ${ATTACH_LIMIT.maxCount}개까지 첨부할 수 있어요.`); break }
+        if (!f.type.startsWith('image/')) { setFileError('이미지 파일만 첨부할 수 있어요.'); continue }
+        if (f.size > ATTACH_LIMIT.maxBytes) { setFileError('각 이미지는 1MB 이하만 첨부할 수 있어요.'); continue }
+        next.push(f)
       }
-      addMessage({ type: MSG_TYPES.FEEDBACK, intentId: rule.intent })
-    }
-    else if (stage === CHATBOT_STAGES.TICKET) {
-      // 3차 게시판 자동등록
-      addMessage({
-        type: MSG_TYPES.BOT_TEXT,
-        html: '자유 입력 감지 — <b>AMS 게시판에 자동 등록</b>해드릴까요?',
-      })
-      addMessage({
-        type: MSG_TYPES.BOT_DATA_CARD,
-        title: '자동 생성된 티켓 미리보기',
-        kind: 'ticket-preview',
-        data: {
-          title: userText.length > 30 ? userText.substring(0, 30) + '...' : userText,
-          category: rule.intent,
-          author: '김명준 · 플랫폼서비스실',
-          body: userText,
-          relatedGuide: rule.title,
-        },
-      })
-      addMessage({
-        type: MSG_TYPES.QUICK_REPLIES,
-        replies: ['✓ 게시판 등록', '수정', '바로 Slack'],
-      })
-    }
-    else if (stage === CHATBOT_STAGES.NL2SQL) {
-      // 4차 NL2SQL
-      const sample = NL2SQL_SAMPLES.unpaid // 데모용 고정
-      addMessage({
-        type: MSG_TYPES.BOT_TEXT,
-        html: '자연어 질문을 SQL로 변환해 AMS DB에서 조회했어요.',
-      })
-      addMessage({
-        type: MSG_TYPES.BOT_DATA_CARD,
-        title: sample.title,
-        kind: 'nl2sql',
-        data: sample,
-      })
-      addMessage({
-        type: MSG_TYPES.QUICK_REPLIES,
-        replies: ['📨 일괄 SMS 발송', '📥 Excel 내려받기', '다른 조건'],
-      })
-    }
-
-    // 부정 시그널 + 에스컬레이션
-    if (isNegative) {
-      setTimeout(() => addMessage({
-        type: MSG_TYPES.BOT_ESCALATION,
-        reason: 'negative-signal',
-        originalQuery: userText,
-      }), 700)
-    }
-  }, [addMessage, stage])
-
-  // === 사용자 입력 처리 (generateResponse 뒤에 배치 — TDZ 회피) ===
-  const sendUserMessage = useCallback((text) => {
-    const trimmed = text.trim()
-    if (!trimmed) return
-
-    // v4 — Conversation Memory: 최근 N개 사용자 발화 보존
-    userHistoryRef.current = [
-      ...userHistoryRef.current.slice(-(MEMORY_WINDOW - 1)),
-      { text: trimmed, ts: Date.now() }
-    ]
-
-    addMessage({ type: MSG_TYPES.USER_TEXT, text: trimmed })
-
-    // 타이핑 인디케이터
-    let typingId = null
-    setMessages(prev => {
-      const id = nextId()
-      typingId = id
-      return [...prev, { id, type: MSG_TYPES.BOT_TYPING, createdAt: Date.now() }]
+      return next.slice(0, ATTACH_LIMIT.maxCount)
     })
 
     // 의도 분석 + 응답 (300ms~1200ms 시뮬레이션)
@@ -504,17 +364,26 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
   // === Cmd+/ 키보드 단축키 ===
   useEffect(() => {
     const handler = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault()
-        toggle()
-      }
-      if (e.key === 'Escape' && isOpen) {
-        close()
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); toggle() }
+      if (e.key === 'Escape' && isOpen) close()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [toggle, close, isOpen])
+
+  const [isFirstVisit] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return !window.localStorage.getItem(ONBOARDED_KEY)
+  })
+  const markVisited = useCallback(() => {
+    if (typeof window !== 'undefined') window.localStorage.setItem(ONBOARDED_KEY, '1')
+  }, [])
+
+  // 분류별 FAQ: 누적 조회수 상위 5건만 노출 (5건 미만이면 전체) — 정책 반영
+  const getQaByCategoryTop = useCallback(
+    (catId) => [...getQaByCategory(catId)].sort((a, b) => (faqViews[b.id] || 0) - (faqViews[a.id] || 0)).slice(0, 5),
+    [faqViews]
+  )
 
   return {
     isOpen,
@@ -542,4 +411,4 @@ export function useChatbot({ contextKey = 'home', userName = '명준', stage: in
   }
 }
 
-export { MSG_TYPES }
+export default useChatbot

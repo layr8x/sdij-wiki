@@ -7,7 +7,6 @@
 //       · body 20/32 · 봇 말풍선/입력 4px · 칩 pill · 폼 입력 #EDF5FF 패널 · 폭 512.
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Microphone, Star } from '@phosphor-icons/react' // v6: 음성 입력 마이크 · CSAT 별점
 import { cn } from '@/lib/utils'
 import { useManagerFaq } from '@/hooks/useManagerFaq'
 import { useChatbot, MSG_TYPES } from './useChatbot'
@@ -186,23 +185,12 @@ function Chip({ label, variant, index = 0, onClick }) {
   )
 }
 
-function ChipMenu({ onPick, showFinish, onFinish }) {
+function ChipMenu({ onPick }) {
   return (
     <div className="flex flex-wrap gap-[8px] w-full">
       {CHIP_MENU.map((c, i) => (
         <Chip key={c.id} label={c.label} variant={c.variant} index={i} onClick={() => onPick(c)} />
       ))}
-      {/* v6: 대화 마치기 → 문의 처리 완료(요약 + CSAT) */}
-      {showFinish && (
-        <button
-          type="button"
-          onClick={onFinish}
-          className="px-[20px] py-[8px] rounded-[24px] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:-translate-y-px active:scale-95 animate-in fade-in zoom-in-95 fill-mode-both"
-          style={{ backgroundColor: T.noticeBg, border: `1px solid ${T.noticeBorder}`, boxShadow: T.shadowS, animationDuration: '280ms' }}
-        >
-          <span style={{ ...FONT.bodyLBold, color: T.brandBlue }}>대화 마치기 ✓</span>
-        </button>
-      )}
     </div>
   )
 }
@@ -372,37 +360,6 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
   const trimmed = text.trim()
   const list = open ? (trimmed ? suggest(text) : popular()) : []
 
-  // v6: 음성으로 묻기 — Web Speech API (ko-KR). 미지원 브라우저는 마이크 버튼 자동 숨김.
-  const [recording, setRecording] = useState(false)
-  // 지원 여부는 마운트 시 1회 계산 (effect 내 setState 회피)
-  const [voiceSupported] = useState(
-    () => typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition)
-  )
-  const recognitionRef = useRef(null)
-  // 언마운트 시 진행 중인 음성 인식 정리
-  useEffect(() => () => { try { recognitionRef.current?.abort?.() } catch { /* noop */ } }, [])
-
-  const toggleVoice = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) return
-    if (recording) { recognitionRef.current?.stop(); return }
-    const recognition = new SR()
-    recognition.lang = 'ko-KR'
-    recognition.interimResults = true
-    recognition.continuous = false
-    // 인식 결과는 검색창에 채우고 추천 목록을 열어 사용자가 확인 후 선택하도록(자동 전송 없음)
-    recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map((r) => r[0].transcript).join('')
-      setText(transcript); setOpen(true); setActive(-1)
-    }
-    recognition.onerror = () => setRecording(false)
-    recognition.onend = () => setRecording(false)
-    recognitionRef.current = recognition
-    setRecording(true)
-    recognition.start()
-    inputRef.current?.focus()
-  }
-
   // 팝업 열리면 데스크탑 자동 포커스(모바일은 키보드 방지)
   useEffect(() => { if (!isMobile) inputRef.current?.focus() }, [isMobile])
 
@@ -453,7 +410,7 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
         <form
           onSubmit={(e) => e.preventDefault()}
           className="flex items-center gap-[8px] p-[8px] rounded-[32px]"
-          style={{ backgroundColor: T.white, border: `1px solid ${recording ? T.error : (focused ? T.brandBlue : T.border)}`, boxShadow: focused ? '0 0 0 3px rgba(0,67,206,0.12)' : 'none', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', transition: 'border-color 150ms, box-shadow 150ms' }}
+          style={{ backgroundColor: T.white, border: `1px solid ${focused ? T.brandBlue : T.border}`, boxShadow: focused ? '0 0 0 3px rgba(0,67,206,0.12)' : 'none', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', transition: 'border-color 150ms, box-shadow 150ms' }}
         >
           <input
             ref={inputRef}
@@ -463,26 +420,12 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
             onFocus={() => setFocused(true)}
             onBlur={() => { setFocused(false); setOpen(false) }}
             onKeyDown={onKeyDown}
-            placeholder={recording ? '듣고 있어요… 말씀하세요' : SEARCH_PLACEHOLDER}
+            placeholder={SEARCH_PLACEHOLDER}
             aria-label="FAQ 검색"
             className="flex-1 min-w-0 bg-transparent border-0 outline-none pl-[16px] placeholder:text-[rgba(22,22,22,0.32)]"
             style={{ ...FONT.bodyL, color: T.ink }}
             autoComplete="off"
           />
-          {/* v6: 음성으로 묻기 — 지원 브라우저에서만 노출(미지원 자동 숨김) */}
-          {voiceSupported && (
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={toggleVoice}
-              aria-label={recording ? '음성 입력 중지' : '음성으로 묻기'}
-              aria-pressed={recording}
-              className="shrink-0 flex items-center justify-center p-[12px] rounded-full transition-all hover:brightness-95 active:scale-95"
-              style={recording ? { backgroundColor: T.error, color: '#fff' } : { backgroundColor: T.disabled, color: T.placeholder }}
-            >
-              <Microphone size={24} weight={recording ? 'fill' : 'regular'} className={recording ? 'animate-pulse' : ''} />
-            </button>
-          )}
           <span aria-hidden className="shrink-0 flex items-center justify-center p-[12px] rounded-full" style={{ backgroundColor: T.disabled }}>
             <MIcon name="search" size={24} color={T.placeholder} />
           </span>
@@ -492,118 +435,8 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
   )
 }
 
-// ─── 문의 처리 현황 Stepper (v6) — 접수 후 진행 단계를 세로 타임라인으로 ─────
-// current = 진행 중 단계 index (이전=완료 ✓, 이후=대기 ○). Carbon 토큰·4px 코너 준수.
-function StatusStepper({ title = '문의 처리 현황', steps = [], current = 0 }) {
-  if (!steps.length) return null
-  return (
-    <div className="w-full max-w-[400px] rounded-[4px] bg-white px-[16px] py-[14px] animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ border: `1px solid ${T.border}` }}>
-      <div className="mb-3" style={{ ...FONT.bodyMBold, color: T.brandBlue }}>🧭 {title}</div>
-      <ol className="relative">
-        {steps.map((step, i) => {
-          const done = i < current
-          const active = i === current
-          const isLast = i === steps.length - 1
-          const labelColor = done || active ? T.navy : T.helper
-          return (
-            <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
-              {!isLast && (
-                <span className="absolute left-[11px] top-6 -bottom-0.5 w-px" style={{ backgroundColor: done ? T.success : T.borderStrong }} aria-hidden />
-              )}
-              <span className="relative shrink-0 flex items-center justify-center mt-0.5" style={{ width: 23, height: 23 }}>
-                {done ? (
-                  <MIcon name="check_circle" size={23} color={T.success} />
-                ) : active ? (
-                  <>
-                    <span className="absolute h-5 w-5 rounded-full opacity-20 animate-ping" style={{ backgroundColor: T.brandBlue }} aria-hidden />
-                    <span className="relative h-3.5 w-3.5 rounded-full" style={{ backgroundColor: T.brandBlue, boxShadow: `0 0 0 3px ${T.noticeBg}` }} />
-                  </>
-                ) : (
-                  <span className="h-3.5 w-3.5 rounded-full border-2 bg-white" style={{ borderColor: T.borderStrong }} />
-                )}
-              </span>
-              <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
-                <span style={{ ...FONT.bodyM, color: labelColor, fontWeight: active ? 600 : done ? 500 : 400 }}>{step.label}</span>
-                <span className="shrink-0 tabular-nums" style={{ ...FONT.caption, color: active ? T.brandBlue : T.placeholder }}>
-                  {active ? '진행 중' : done ? (step.meta || '완료') : '대기'}
-                </span>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
-    </div>
-  )
-}
-
-// ─── 문의 처리 완료 — 요약 + 만족도(CSAT) (v6) ───────────────────────────
-// '상담 종료'(상담원 연결)가 아니라 셀프서비스 마무리이므로 '문의 처리 완료' 표현 사용.
-function ClosingSummaryCard({ topics = [], onRate }) {
-  const [rated, setRated] = useState(0)
-  const [hover, setHover] = useState(0)
-  const [done, setDone] = useState(false)
-
-  const handleRate = (score) => {
-    if (done) return
-    setRated(score)
-    setDone(true)
-    onRate?.(score)
-  }
-
-  return (
-    <div className="w-full max-w-[400px] rounded-[4px] overflow-hidden bg-white animate-in fade-in slide-in-from-bottom-2 duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ border: `1px solid ${T.border}`, borderTop: `3px solid ${T.success}` }}>
-      <div className="flex items-center gap-2 px-[16px] pt-[14px] pb-[8px]">
-        <MIcon name="check_circle" size={22} color={T.success} />
-        <span style={{ ...FONT.bodyLBold, color: T.navy }}>문의 처리 완료</span>
-      </div>
-
-      {topics.length > 0 && (
-        <div className="px-[16px] pb-3">
-          <div className="mb-1.5" style={{ ...FONT.bodyM, color: T.helper }}>오늘 이런 걸 도와드렸어요</div>
-          <ul className="space-y-1">
-            {topics.map((t, i) => (
-              <li key={i} className="flex items-start gap-1.5" style={{ ...FONT.bodyM, color: T.navy }}>
-                <MIcon name="check_circle" size={18} color={T.success} className="shrink-0 mt-0.5" />
-                <span className="min-w-0 truncate">{t}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="px-[16px] py-[14px]" style={{ backgroundColor: T.noticeBg, borderTop: `1px solid ${T.border}` }}>
-        {!done ? (
-          <>
-            <div className="text-center mb-2.5" style={{ ...FONT.bodyMBold, color: T.navy }}>오늘 도움이 어떠셨나요?</div>
-            <div className="flex items-center justify-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleRate(s)}
-                  onMouseEnter={() => setHover(s)}
-                  onMouseLeave={() => setHover(0)}
-                  aria-label={`만족도 ${s}점`}
-                  className="transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 rounded-full"
-                >
-                  <Star size={30} weight={(hover || rated) >= s ? 'fill' : 'regular'} style={{ color: (hover || rated) >= s ? T.csatStar : T.borderStrong }} />
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center gap-1.5 py-1" style={{ ...FONT.bodyMBold, color: T.success }}>
-            <MIcon name="check_circle" size={20} color={T.success} />
-            평가 감사합니다! 🙏
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ─── 메시지 간 간격 (시안: 봇 연속 메시지 8px · 화자전환/칩 24px) ──────────
-const BOT_SIDE = new Set(['greeting', 'bot', 'faq', 'guide', 'form', 'typing', 'stepper', 'closing'])
+const BOT_SIDE = new Set(['greeting', 'bot', 'faq', 'guide', 'form', 'typing'])
 function gapBefore(prev, m) {
   if (!prev) return 0
   if (m.type === 'chips' || m.type === 'user') return 24
@@ -617,7 +450,7 @@ function ThreadMessage({ m, chatbot }) {
     case MSG_TYPES.GREETING:
       return <BotBubble text={GREETING} />
     case MSG_TYPES.CHIPS:
-      return <ChipMenu onPick={chatbot.pickChip} showFinish={m.showFinish} onFinish={chatbot.finishConversation} />
+      return <ChipMenu onPick={chatbot.pickChip} />
     case MSG_TYPES.USER:
       return <UserBubble text={m.text} />
     case MSG_TYPES.TYPING:
@@ -638,12 +471,6 @@ function ThreadMessage({ m, chatbot }) {
       return <GuideCard guide={m.guide} onOpen={chatbot.openGuide} />
     case MSG_TYPES.FORM:
       return <InlineForm m={m} chatbot={chatbot} />
-    // v6: 문의 처리 현황(Stepper) — 해결방법요청/오류신고 접수 후 진행 단계
-    case MSG_TYPES.STEPPER:
-      return <StatusStepper title={m.title} steps={m.steps} current={m.current} />
-    // v6: 문의 처리 완료 — 요약 + 만족도(CSAT)
-    case MSG_TYPES.CLOSING:
-      return <ClosingSummaryCard topics={m.topics} onRate={(s) => chatbot.rateSatisfaction(s)} />
     default:
       return null
   }

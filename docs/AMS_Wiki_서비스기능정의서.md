@@ -13,7 +13,7 @@
 | 레퍼런스 | Stripe Docs · Notion Help · Zendesk Guide · GitBook · Intercom · Atlassian · Slack |
 | 대상 해상도 | 1920 × 1080 (PC) 메인 타겟, 1440 × 900 최소 지원 |
 | 대상 독자 | 플랫폼서비스실, 디자인실, 개발실, 운영팀 |
-| 구현 저장소 | https://github.com/layr8x/ams-wiki (Vite + React, Vercel 배포) |
+| 구현 저장소 | https://github.com/layr8x/sdij-wiki (Vite + React, Vercel 배포) |
 
 ---
 
@@ -732,11 +732,11 @@ AMS 위키 프로젝트는 매주 금요일 위클리 회의를 진행한다.
 
 | PR | 일자 | 영역 | 변경 요약 | 정의서 반영 섹션 |
 |---|---|---|---|---|
-| [#22](https://github.com/layr8x/ams-wiki/pull/22) | 2026-04-17 | Header | h-4 vertical Separator (사이드바 트리거 옆) 제거 — 56px 헤더에서 16px만 그려져 cut-off로 보이던 문제 | 5. 레이아웃 사양 |
-| [#23](https://github.com/layr8x/ams-wiki/pull/23) | 2026-04-17 | Sidebar / Search / Auth | 사이드바 로고 확대, 검색 단축키 `⌘K` → `/` 변경, GuidePage 케이스 이미지 figure/caption 지원, 로그인 모달을 Radix Dialog로 교체, 사이드바에 "새 가이드 작성" 진입점 추가 | 5. / 6. / 7. / 9. |
-| [#24](https://github.com/layr8x/ams-wiki/pull/24) | 2026-04-17 | Dashboard / Sidebar / Editor / Glossary | 대시보드 검색 버튼 → "새 가이드 작성" CTA 교체, 로고 추가 확대, Confluence 링크 노출 조건 완화, **EditorPage type별 9개 섹션 편집기 분리**, ams-glossary 28개 용어로 확장 | 6. / 10. / 14. |
-| [#25](https://github.com/layr8x/ams-wiki/pull/25) | 2026-04-17 | Sidebar / Editor / Image | 워드마크 비율 정상화 (`SidebarMenuButton`의 `[&_svg]:size-4` 강제 16×16 문제 해결, h-6 w-auto 좌측 정렬), 에디터 좌측 셀렉 카드 Badge 가시성 복원, 가이드 이미지 production fallback (env 분기 + onError → placeholder SVG) | 5. / 7. / 13. |
-| [#26](https://github.com/layr8x/ams-wiki/pull/26) | 2026-04-17 | Editor | `/editor` 좌측 사이드바를 "기존 가이드 리스트" → **"6개 타입 템플릿 picker"** 로 교체. 선택 시 본문 sections 자동 재구성. 빈 제목일 때 상단바 muted fallback. | 10.2 / 10.2.1 |
+| [#22](https://github.com/layr8x/sdij-wiki/pull/22) | 2026-04-17 | Header | h-4 vertical Separator (사이드바 트리거 옆) 제거 — 56px 헤더에서 16px만 그려져 cut-off로 보이던 문제 | 5. 레이아웃 사양 |
+| [#23](https://github.com/layr8x/sdij-wiki/pull/23) | 2026-04-17 | Sidebar / Search / Auth | 사이드바 로고 확대, 검색 단축키 `⌘K` → `/` 변경, GuidePage 케이스 이미지 figure/caption 지원, 로그인 모달을 Radix Dialog로 교체, 사이드바에 "새 가이드 작성" 진입점 추가 | 5. / 6. / 7. / 9. |
+| [#24](https://github.com/layr8x/sdij-wiki/pull/24) | 2026-04-17 | Dashboard / Sidebar / Editor / Glossary | 대시보드 검색 버튼 → "새 가이드 작성" CTA 교체, 로고 추가 확대, Confluence 링크 노출 조건 완화, **EditorPage type별 9개 섹션 편집기 분리**, ams-glossary 28개 용어로 확장 | 6. / 10. / 14. |
+| [#25](https://github.com/layr8x/sdij-wiki/pull/25) | 2026-04-17 | Sidebar / Editor / Image | 워드마크 비율 정상화 (`SidebarMenuButton`의 `[&_svg]:size-4` 강제 16×16 문제 해결, h-6 w-auto 좌측 정렬), 에디터 좌측 셀렉 카드 Badge 가시성 복원, 가이드 이미지 production fallback (env 분기 + onError → placeholder SVG) | 5. / 7. / 13. |
+| [#26](https://github.com/layr8x/sdij-wiki/pull/26) | 2026-04-17 | Editor | `/editor` 좌측 사이드바를 "기존 가이드 리스트" → **"6개 타입 템플릿 picker"** 로 교체. 선택 시 본문 sections 자동 재구성. 빈 제목일 때 상단바 muted fallback. | 10.2 / 10.2.1 |
 
 ### 17.1 사양 대비 미구현 / 차이 항목
 

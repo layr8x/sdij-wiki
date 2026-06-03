@@ -401,7 +401,6 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
               style={{ borderBottom: `1px solid ${T.border}`, backgroundColor: active === i ? '#F7FAFF' : T.white, ...FONT.bodyL, color: T.navy }}
             >
               <span className="flex-1 min-w-0 break-words">{highlightMatch(qa.ams ? qa.q : qa.q.replace(/[?？]\s*$/, '') + '?', text)}</span>
-              {qa.ams && <MIcon name="open_in_new" size={24} color={T.placeholder} className="shrink-0" style={{ opacity: 0.4 }} />}
             </button>
           ))}
         </div>

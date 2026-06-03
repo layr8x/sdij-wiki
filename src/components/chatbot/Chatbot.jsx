@@ -381,10 +381,10 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
       className="shrink-0 overflow-hidden"
       style={{
         backgroundColor: T.white,
-        borderTop: showList ? 'none' : `1px solid ${T.border}`,
-        borderTopLeftRadius: showList ? 16 : 0,
-        borderTopRightRadius: showList ? 16 : 0,
-        boxShadow: showList ? '0 -1px 0 rgba(22,22,22,0.12)' : 'none',
+        borderTop: `1px solid ${showList ? 'rgba(22,22,22,0.12)' : T.border}`,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        boxShadow: 'none',
       }}
     >
       {showList && (

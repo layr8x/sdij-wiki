@@ -384,7 +384,7 @@ function SearchBar({ suggest, popular, onPickSuggestion }) {
         borderTop: showList ? 'none' : `1px solid ${T.border}`,
         borderTopLeftRadius: showList ? 16 : 0,
         borderTopRightRadius: showList ? 16 : 0,
-        boxShadow: showList ? '0 -1px 0 rgba(22,22,22,0.08), 0 -10px 30px rgba(0,0,0,0.16)' : 'none',
+        boxShadow: showList ? '0 -1px 0 rgba(22,22,22,0.10), 0 -2px 8px rgba(0,0,0,0.05)' : 'none',
       }}
     >
       {showList && (
